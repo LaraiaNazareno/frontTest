@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { SketchCardsView } from "@/components/catalog-v3/sketch-cards-view"
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select"
 import { LayoutGrid, List, Download, Table } from "lucide-react"
 
-export default function CatalogPage() {
+function CatalogPageContent() {
   const searchParams = useSearchParams()
   const preferredCatalogId = searchParams.get("catalogId")
   const [viewMode, setViewMode] = useState<ViewMode>("cards")
@@ -444,5 +444,13 @@ export default function CatalogPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <CatalogPageContent />
+    </Suspense>
   )
 }
