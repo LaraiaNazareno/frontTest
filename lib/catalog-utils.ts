@@ -23,9 +23,12 @@ export const mapItemDetailsToProducts = (items: CatalogItemDetail[]): Product[] 
 
     return {
       id: item.id,
+      itemUuid: item.uuid || item.id,
       title: item.name,
       description: item.description,
       price: Number.isNaN(price) ? 0 : price,
       image: item.image || "/placeholder.svg",
     }
   })
+
+export const isValidPrice = (value: string) => /^\d+(\.\d{1,2})?$/.test(value.trim())

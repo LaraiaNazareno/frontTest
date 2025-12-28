@@ -66,6 +66,97 @@ export const fetchCatalogItems = async (catalogId: string, token: string) => {
   return []
 }
 
+export const updateCatalogItem = async (
+  itemUuid: string,
+  token: string,
+  payload: {
+    catalogId: string
+    name?: string
+    description?: string
+    price?: string
+  },
+) => {
+  const baseUrl = getApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/items/${encodeURIComponent(itemUuid)}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      catalogoId: payload.catalogId,
+      name: payload.name,
+      description: payload.description,
+      price: payload.price,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  return response.json()
+}
+
+export const deleteCatalogItem = async (
+  itemUuid: string,
+  token: string,
+  catalogId: string,
+) => {
+  const baseUrl = getApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/items/${encodeURIComponent(itemUuid)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ catalogoId: catalogId }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  if (response.status === 204) {
+    return { ok: true }
+  }
+  const text = await response.text().catch(() => "")
+  if (!text) {
+    return { ok: true }
+  }
+  try {
+    return JSON.parse(text)
+  } catch (err) {
+    return { ok: true }
+  }
+}
+
+export const reorderCatalogItemPosition = async (
+  itemUuid: string,
+  catalogId: string,
+  newPosition: number,
+  token: string,
+) => {
+  const baseUrl = getApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/items/${encodeURIComponent(itemUuid)}/position`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      catalogoId: catalogId,
+      newPosition,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  return response.json().catch(() => ({ ok: true }))
+}
+
 export const exportCatalogPdfHtml = async (
   catalogId: string,
   token: string,

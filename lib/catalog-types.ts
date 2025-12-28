@@ -12,6 +12,8 @@ export type CatalogItem = {
 
 export type CatalogItemDetail = {
   id: string
+  uuid?: string
+  catalogId?: string
   name: string
   description: string
   price: string
@@ -20,6 +22,7 @@ export type CatalogItemDetail = {
 
 export type Product = {
   id: string
+  itemUuid?: string
   title: string
   description: string
   price: number

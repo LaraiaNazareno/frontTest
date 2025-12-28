@@ -10,8 +10,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import type { CatalogItem, CatalogItemDetail, ViewMode } from "@/lib/catalog-types"
-import { formatPrice, mapItemDetailsToProducts, normalizeHexColor } from "@/lib/catalog-utils"
-import { exportCatalogPdfHtml, fetchCatalogItems, fetchCatalogs } from "@/lib/catalog-api"
+import { formatPrice, isValidPrice, mapItemDetailsToProducts, normalizeHexColor } from "@/lib/catalog-utils"
+import {
+  deleteCatalogItem,
+  exportCatalogPdfHtml,
+  fetchCatalogItems,
+  fetchCatalogs,
+  reorderCatalogItemPosition,
+  updateCatalogItem,
+} from "@/lib/catalog-api"
 import { buildCatalogPdfHtml } from "@/lib/pdf-template"
 import {
   Select,
@@ -36,6 +43,10 @@ function CatalogPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [itemsError, setItemsError] = useState<string | null>(null)
   const [hasToken, setHasToken] = useState<boolean | null>(null)
+  const [editingItemUuid, setEditingItemUuid] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState({ name: "", description: "", price: "" })
+  const [draggingItemUuid, setDraggingItemUuid] = useState<string | null>(null)
+  const [dragOverItemUuid, setDragOverItemUuid] = useState<string | null>(null)
   const pdfContentRef = useRef<HTMLDivElement | null>(null)
 
   const selectedCatalog = useMemo(
@@ -91,8 +102,7 @@ function CatalogPageContent() {
     setCatalogItemDetails([])
   }
 
-  useEffect(() => {
-    const loadCatalogItems = async () => {
+  const loadCatalogItems = useCallback(async () => {
       if (!selectedCatalogId) {
         setCatalogItemDetails([])
         setItemsError(null)
@@ -120,10 +130,197 @@ function CatalogPageContent() {
       } finally {
         setLoadingItems(false)
       }
+    }, [selectedCatalogId])
+
+  useEffect(() => {
+    loadCatalogItems()
+  }, [loadCatalogItems])
+
+  useEffect(() => {
+    setEditingItemUuid(null)
+  }, [selectedCatalogId])
+
+  const handleStartEditItem = (item: { itemUuid?: string; title: string; description: string; price: number }) => {
+    if (!item.itemUuid) {
+      return
+    }
+    setEditingItemUuid(item.itemUuid)
+    setEditDraft({
+      name: item.title,
+      description: item.description,
+      price: item.price.toFixed(2),
+    })
+  }
+
+  const handleEditChange = (field: "name" | "description" | "price", value: string) => {
+    setEditDraft((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleCancelEdit = () => {
+    setEditingItemUuid(null)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingItemUuid || !selectedCatalogId) {
+      return
+    }
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      toast({
+        title: "No hay sesión",
+        description: "Inicia sesión para editar items.",
+        variant: "destructive",
+      })
+      return
     }
 
-    loadCatalogItems()
-  }, [selectedCatalogId])
+    if (!editDraft.name.trim()) {
+      toast({
+        title: "Falta el nombre",
+        description: "Ingresa un nombre para el item.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!editDraft.price.trim()) {
+      toast({
+        title: "Falta el precio",
+        description: "Ingresa un precio válido.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!isValidPrice(editDraft.price)) {
+      toast({
+        title: "Precio inválido",
+        description: "Usa solo números, por ejemplo 25 o 25.50.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      await updateCatalogItem(editingItemUuid, token, {
+        catalogId: selectedCatalogId,
+        name: editDraft.name.trim(),
+        description: editDraft.description.trim() || undefined,
+        price: editDraft.price.trim(),
+      })
+      toast({
+        title: "Item actualizado",
+        description: "Los cambios se guardaron correctamente.",
+      })
+      setEditingItemUuid(null)
+      await loadCatalogItems()
+    } catch (err) {
+      toast({
+        title: "Error al guardar",
+        description: err instanceof Error ? err.message : "No se pudo actualizar el item.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteItem = async (itemUuid: string) => {
+    if (!selectedCatalogId) {
+      return
+    }
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      toast({
+        title: "No hay sesión",
+        description: "Inicia sesión para eliminar items.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!window.confirm("¿Eliminar este item? Esta acción no se puede deshacer.")) {
+      return
+    }
+
+    try {
+      await deleteCatalogItem(itemUuid, token, selectedCatalogId)
+      toast({
+        title: "Item eliminado",
+        description: "Se eliminó el item correctamente.",
+      })
+      await loadCatalogItems()
+    } catch (err) {
+      toast({
+        title: "Error al eliminar",
+        description: err instanceof Error ? err.message : "No se pudo eliminar el item.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
+
+  const handleDragStart = (itemUuid: string) => {
+    setDraggingItemUuid(itemUuid)
+  }
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault()
+  }
+
+  const handleDragEnter = (itemUuid: string) => {
+    if (draggingItemUuid && draggingItemUuid !== itemUuid) {
+      setDragOverItemUuid(itemUuid)
+    }
+  }
+
+  const handleDragLeave = () => {
+    setDragOverItemUuid(null)
+  }
+
+  const handleDrop = async (targetUuid: string) => {
+    if (!draggingItemUuid || draggingItemUuid === targetUuid) {
+      setDraggingItemUuid(null)
+      setDragOverItemUuid(null)
+      return
+    }
+
+    const fromIndex = catalogItemDetails.findIndex((item) => getItemUuid(item) === draggingItemUuid)
+    const toIndex = catalogItemDetails.findIndex((item) => getItemUuid(item) === targetUuid)
+
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggingItemUuid(null)
+      return
+    }
+
+    const nextItems = [...catalogItemDetails]
+    const [moved] = nextItems.splice(fromIndex, 1)
+    nextItems.splice(toIndex, 0, moved)
+    setCatalogItemDetails(nextItems)
+    setDraggingItemUuid(null)
+    setDragOverItemUuid(null)
+
+    const token = localStorage.getItem("token")
+    if (!token || !selectedCatalogId) {
+      return
+    }
+
+    try {
+      const targetIndex = toIndex + 1
+      await reorderCatalogItemPosition(draggingItemUuid, selectedCatalogId, targetIndex, token)
+      toast({
+        title: "Orden actualizado",
+        description: "Se guardó el nuevo orden.",
+      })
+    } catch (err) {
+      toast({
+        title: "No se pudo ordenar",
+        description: err instanceof Error ? err.message : "No se pudo guardar el orden.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleExportPDF = async () => {
     const token = localStorage.getItem("token")
@@ -373,6 +570,19 @@ function CatalogPageContent() {
             products={products}
             businessName={businessName}
             cardBackgroundColor={componentColor}
+            onDeleteItem={handleDeleteItem}
+            onStartEditItem={handleStartEditItem}
+            onEditChange={handleEditChange}
+            onEditSave={handleSaveEdit}
+            onEditCancel={handleCancelEdit}
+            editingItemUuid={editingItemUuid}
+            editDraft={editDraft}
+            onDragStart={handleDragStart}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            dragOverItemUuid={dragOverItemUuid}
           />
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "checklist" && (
@@ -380,6 +590,19 @@ function CatalogPageContent() {
             products={products}
             businessName={businessName}
             containerBackgroundColor={componentColor}
+            onDeleteItem={handleDeleteItem}
+            onStartEditItem={handleStartEditItem}
+            onEditChange={handleEditChange}
+            onEditSave={handleSaveEdit}
+            onEditCancel={handleCancelEdit}
+            editingItemUuid={editingItemUuid}
+            editDraft={editDraft}
+            onDragStart={handleDragStart}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            dragOverItemUuid={dragOverItemUuid}
           />
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "table" && (
@@ -390,7 +613,24 @@ function CatalogPageContent() {
               padding: "16px",
             }}
           >
-            <TableView products={products} businessName={businessName} backgroundColor={componentColor} />
+            <TableView
+              products={products}
+              businessName={businessName}
+              backgroundColor={componentColor}
+              onDeleteItem={handleDeleteItem}
+              onStartEditItem={handleStartEditItem}
+              onEditChange={handleEditChange}
+              onEditSave={handleSaveEdit}
+              onEditCancel={handleCancelEdit}
+              editingItemUuid={editingItemUuid}
+              editDraft={editDraft}
+              onDragStart={handleDragStart}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              dragOverItemUuid={dragOverItemUuid}
+            />
           </div>
         )}
         <div className="absolute left-[-10000px] top-0 w-[1024px]" aria-hidden="true">

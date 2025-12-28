@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ColorPickerField } from "@/components/catalog-v3/color-picker-field"
 import { toast } from "@/hooks/use-toast"
+import { useFilePreview } from "@/hooks/use-file-preview"
 import { createCatalog, updateCatalog, uploadCatalogImages } from "@/lib/catalog-api"
 import { normalizeHexColor } from "@/lib/catalog-utils"
 
@@ -36,20 +38,7 @@ export default function NewCatalogPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const previewUrl = useMemo(() => {
-    if (!logoFile) {
-      return null
-    }
-    return URL.createObjectURL(logoFile)
-  }, [logoFile])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-      }
-    }
-  }, [previewUrl])
+  const previewUrl = useFilePreview(logoFile)
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token")
@@ -149,52 +138,18 @@ export default function NewCatalogPage() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Color de fondo</label>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
-                <label className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border shadow-sm">
-                  <span
-                    className="absolute inset-1 rounded-full"
-                    style={{ backgroundColor: backgroundColor }}
-                  />
-                  <input
-                    type="color"
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                    className="h-full w-full cursor-pointer opacity-0"
-                  />
-                </label>
-                <Input
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  placeholder="#FFFFFF"
-                  className="font-mono uppercase tracking-wide"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Color de componente</label>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
-                <label className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-border shadow-sm">
-                  <span
-                    className="absolute inset-1 rounded-full"
-                    style={{ backgroundColor: componentColor }}
-                  />
-                  <input
-                    type="color"
-                    value={componentColor}
-                    onChange={(e) => setComponentColor(e.target.value)}
-                    className="h-full w-full cursor-pointer opacity-0"
-                  />
-                </label>
-                <Input
-                  value={componentColor}
-                  onChange={(e) => setComponentColor(e.target.value)}
-                  placeholder="#F2BADE"
-                  className="font-mono uppercase tracking-wide"
-                />
-              </div>
-            </div>
+            <ColorPickerField
+              label="Color de fondo"
+              value={backgroundColor}
+              placeholder="#FFFFFF"
+              onChange={setBackgroundColor}
+            />
+            <ColorPickerField
+              label="Color de componente"
+              value={componentColor}
+              placeholder="#F2BADE"
+              onChange={setComponentColor}
+            />
           </div>
 
           <div className="flex items-center gap-3">

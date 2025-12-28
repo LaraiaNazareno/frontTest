@@ -1,12 +1,14 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
+import { useFilePreview } from "@/hooks/use-file-preview"
 import { createCatalogItem } from "@/lib/catalog-api"
+import { isValidPrice } from "@/lib/catalog-utils"
 
 export default function NewCatalogItemPage() {
   const router = useRouter()
@@ -18,12 +20,7 @@ export default function NewCatalogItemPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const previewUrl = useMemo(() => {
-    if (!imageFile) {
-      return null
-    }
-    return URL.createObjectURL(imageFile)
-  }, [imageFile])
+  const previewUrl = useFilePreview(imageFile)
 
   const handleSubmit = async () => {
     const token = localStorage.getItem("token")
@@ -63,7 +60,7 @@ export default function NewCatalogItemPage() {
       })
       return
     }
-    if (!/^\d+(\.\d{1,2})?$/.test(price.trim())) {
+    if (!isValidPrice(price)) {
       toast({
         title: "Precio inválido",
         description: "Usa solo números, por ejemplo 25 o 25.50.",
