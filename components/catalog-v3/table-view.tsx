@@ -50,7 +50,127 @@ export function TableView({
           <h2 className="text-2xl font-bold text-primary">{businessName}</h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="sm:hidden space-y-4 px-4 py-6">
+          {products.map((product) => (
+            <div
+              key={product.id}
+              draggable={Boolean(onDragStart)}
+              onDragStart={() => onDragStart?.(product.itemUuid || product.id)}
+              onDragEnter={() => onDragEnter?.(product.itemUuid || product.id)}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDrop={() => onDrop?.(product.itemUuid || product.id)}
+              className={`rounded-2xl border border-border p-4 bg-card/70 ${
+                dragOverItemUuid === (product.itemUuid || product.id)
+                  ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-1 before:h-0.5 before:bg-primary/70"
+                  : ""
+              }`}
+              style={backgroundStyle}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 relative rounded-lg overflow-hidden border-2 border-border flex-shrink-0">
+                  <Image
+                    src={product.image || "/placeholder.svg"}
+                    alt={product.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  {editingItemUuid === product.itemUuid && editDraft && onEditChange ? (
+                    <>
+                      <Input
+                        value={editDraft.name}
+                        onChange={(e) => onEditChange("name", e.target.value)}
+                        className="mb-2"
+                      />
+                      <Input
+                        value={editDraft.description}
+                        onChange={(e) => onEditChange("description", e.target.value)}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-foreground">{product.title}</p>
+                      <p className="text-sm text-muted-foreground">{product.description}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                {editingItemUuid === product.itemUuid && editDraft && onEditChange ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editDraft.price}
+                      onChange={(e) => onEditChange("price", e.target.value)}
+                      className="w-28 text-right"
+                    />
+                    <span className="text-sm text-muted-foreground">ARS</span>
+                  </div>
+                ) : (
+                  <p className="font-bold text-foreground">${product.price.toLocaleString("es-AR")}</p>
+                )}
+
+                {(onDeleteItem || onStartEditItem) && (
+                  <div className="flex items-center gap-2">
+                    {editingItemUuid === product.itemUuid ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onEditSave?.()}
+                          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted/40"
+                        >
+                          <Save className="h-4 w-4" />
+                          Guardar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onEditCancel?.()}
+                          className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground/60 hover:text-foreground hover:bg-muted/40"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {onStartEditItem && product.itemUuid && (
+                          <button
+                            type="button"
+                            onClick={() => onStartEditItem(product)}
+                            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted/40"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Editar
+                          </button>
+                        )}
+                        {onDragStart && (
+                          <span className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground/60">
+                            <GripVertical className="h-4 w-4" />
+                            Mover
+                          </span>
+                        )}
+                        {onDeleteItem && product.itemUuid && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteItem(product.itemUuid!)}
+                            className="inline-flex items-center justify-center rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                            aria-label="Eliminar item"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-border bg-muted/30" style={backgroundStyle}>

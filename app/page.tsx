@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { SketchCardsView } from "@/components/catalog-v3/sketch-cards-view"
 import { ChecklistView } from "@/components/catalog-v3/checklist-view"
 import { TableView } from "@/components/catalog-v3/table-view"
@@ -21,15 +21,23 @@ import {
 } from "@/lib/catalog-api"
 import { buildCatalogPdfHtml } from "@/lib/pdf-template"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LayoutGrid, List, Download, Table } from "lucide-react"
+import { LayoutGrid, List, Download, Table, MoreHorizontal, Plus, Pencil, LogOut } from "lucide-react"
 
 function CatalogPageContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const preferredCatalogId = searchParams.get("catalogId")
   const [viewMode, setViewMode] = useState<ViewMode>("cards")
@@ -432,100 +440,122 @@ function CatalogPageContent() {
     >
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-8">
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            {/* Title Section */}
-            <div className="flex-1 min-w-[280px]">
-              <Input
-                value={catalogName}
-                onChange={(e) => setCatalogName(e.target.value)}
-                className="text-4xl font-bold border-none bg-transparent px-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-primary"
-                placeholder="Catálogos"
-              />
-              <Input
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                className="text-lg text-muted-foreground border-none bg-transparent px-0 h-auto mt-4 focus-visible:ring-0 focus-visible:ring-offset-0"
-                placeholder="Tu marca"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 items-start flex-wrap">
-              {hasToken && (
-                <>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/catalogos/nuevo">Nuevo catálogo</Link>
-                  </Button>
-                  {selectedCatalog && (
-                    <Button asChild variant="outline" size="lg">
-                      <Link href={`/catalogos/${selectedCatalog.id}/items/nuevo`}>Nuevo item</Link>
-                    </Button>
-                  )}
-                  {selectedCatalog && (
-                    <Button asChild variant="outline" size="lg">
-                      <Link href={`/catalogos/${selectedCatalog.id}/editar`}>Editar catálogo</Link>
-                    </Button>
-                  )}
-                  <Button variant="outline" size="lg" onClick={handleLogout}>
-                    Cerrar sesión
-                  </Button>
-                </>
-              )}
-              <Select
-                value={selectedCatalogId ?? undefined}
-                onValueChange={(value: string) => {
-                  setSelectedCatalogId(value)
-                  const nextCatalog = catalogItems.find((item) => item.id === value)
-                  if (nextCatalog) {
-                    setCatalogName(nextCatalog.title)
-                  }
-                }}
-              >
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Selecciona un catálogo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {catalogItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "cards" ? "default" : "outline"}
-                  onClick={() => setViewMode("cards")}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <LayoutGrid className="h-5 w-5" />
-                  <span>Tarjetas</span>
-                </Button>
-                <Button
-                  variant={viewMode === "checklist" ? "default" : "outline"}
-                  onClick={() => setViewMode("checklist")}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <List className="h-5 w-5" />
-                  <span>Lista</span>
-                </Button>
-                <Button
-                  variant={viewMode === "table" ? "default" : "outline"}
-                  onClick={() => setViewMode("table")}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <Table className="h-5 w-5" />
-                  <span>Tabla</span>
-                </Button>
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-center gap-3">
+                {hasToken && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="lg" className="gap-2">
+                        <MoreHorizontal className="h-5 w-5" />
+                        Acciones
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onSelect={() => router.push("/catalogos/nuevo")}>
+                        <Plus className="h-4 w-4" />
+                        Nuevo catálogo
+                      </DropdownMenuItem>
+                      {selectedCatalog && (
+                        <DropdownMenuItem
+                          onSelect={() => router.push(`/catalogos/${selectedCatalog.id}/items/nuevo`)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Nuevo item
+                        </DropdownMenuItem>
+                      )}
+                      {selectedCatalog && (
+                        <DropdownMenuItem
+                          onSelect={() => router.push(`/catalogos/${selectedCatalog.id}/editar`)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar catálogo
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+                        <LogOut className="h-4 w-4" />
+                        Cerrar sesión
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
 
-              <Button onClick={handleExportPDF} size="lg" className="gap-2 bg-primary hover:bg-primary/90">
-                <Download className="h-5 w-5" />
-                <span>Exportar PDF</span>
-              </Button>
+              {/* Title Section */}
+              <div className="min-w-[280px] max-w-3xl lg:flex-1 lg:max-w-xl lg:mx-6">
+                <Input
+                  value={catalogName}
+                  onChange={(e) => setCatalogName(e.target.value)}
+                  className="text-4xl font-bold border-none bg-transparent px-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-primary"
+                  placeholder="Catálogos"
+                />
+                <Input
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="text-lg text-muted-foreground border-none bg-transparent px-0 h-auto mt-4 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  placeholder="Tu marca"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 items-center flex-wrap justify-start lg:justify-end">
+                <Select
+                  value={selectedCatalogId ?? undefined}
+                  onValueChange={(value: string) => {
+                    setSelectedCatalogId(value)
+                    const nextCatalog = catalogItems.find((item) => item.id === value)
+                    if (nextCatalog) {
+                      setCatalogName(nextCatalog.title)
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Selecciona un catálogo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catalogItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "outline"}
+                    onClick={() => setViewMode("cards")}
+                    size="lg"
+                    className="gap-2"
+                  >
+                    <LayoutGrid className="h-5 w-5" />
+                    <span>Tarjetas</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === "checklist" ? "default" : "outline"}
+                    onClick={() => setViewMode("checklist")}
+                    size="lg"
+                    className="gap-2"
+                  >
+                    <List className="h-5 w-5" />
+                    <span>Lista</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === "table" ? "default" : "outline"}
+                    onClick={() => setViewMode("table")}
+                    size="lg"
+                    className="gap-2"
+                  >
+                    <Table className="h-5 w-5" />
+                    <span>Tabla</span>
+                  </Button>
+                </div>
+
+                <Button onClick={handleExportPDF} size="lg" className="gap-2 bg-primary hover:bg-primary/90">
+                  <Download className="h-5 w-5" />
+                  <span>Exportar PDF</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

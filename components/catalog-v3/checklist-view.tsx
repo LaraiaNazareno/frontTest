@@ -51,13 +51,13 @@ export function ChecklistView({
   return (
     <div className="max-w-4xl mx-auto">
       <div
-        className="bg-secondary/30 border-2 border-foreground/20 rounded-3xl p-8"
+        className="bg-secondary/30 border-2 border-foreground/20 rounded-3xl p-4 sm:p-8"
         style={containerBackgroundColor ? { backgroundColor: containerBackgroundColor } : undefined}
       >
         <div>
           {/* Header */}
           <div className="mb-8 pb-6 border-b-2 border-dashed border-foreground/20">
-            <h2 className="text-3xl font-bold text-primary mb-2" style={{ fontFamily: "cursive" }}>
+            <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2" style={{ fontFamily: "cursive" }}>
               Productos {businessName}
             </h2>
             <p className="text-muted-foreground">Catálogo completo con precios</p>
@@ -74,7 +74,7 @@ export function ChecklistView({
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={() => onDrop?.(product.itemUuid || product.id)}
-                className={`flex items-start gap-6 p-4 rounded-2xl hover:bg-card/50 transition-colors border-2 border-transparent hover:border-primary/20 ${
+                className={`flex flex-col items-start gap-4 p-4 rounded-2xl hover:bg-card/50 transition-colors border-2 border-transparent hover:border-primary/20 sm:flex-row sm:items-center sm:gap-6 ${
                   dragOverItemUuid === (product.itemUuid || product.id)
                     ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-2 before:h-0.5 before:bg-primary/70"
                     : ""
@@ -115,13 +115,13 @@ export function ChecklistView({
                 </div>
 
                 {/* Price */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 w-full sm:w-auto">
                   {editingItemUuid === product.itemUuid && editDraft && onEditChange ? (
                     <div className="flex items-center gap-2">
                       <Input
                         value={editDraft.price}
                         onChange={(e) => onEditChange("price", e.target.value)}
-                        className="w-28"
+                        className="w-full sm:w-28"
                       />
                       <span className="text-sm text-muted-foreground">ARS</span>
                     </div>
@@ -131,7 +131,7 @@ export function ChecklistView({
                     </div>
                   )}
                   {(onDeleteItem || onStartEditItem) && product.itemUuid && (
-                    <div className="flex items-center gap-3 mt-3">
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
                       {editingItemUuid === product.itemUuid ? (
                         <>
                           <button

@@ -163,12 +163,12 @@ export default function NewCatalogItemPage() {
             )}
           </div>
 
-          <div className="flex gap-3">
-            <Button onClick={handleSubmit} size="lg" disabled={loading}>
-              {loading ? "Creando..." : "Crear item"}
-            </Button>
+          <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
             <Button asChild variant="outline" size="lg">
               <Link href="/">Cancelar</Link>
+            </Button>
+            <Button onClick={handleSubmit} size="lg" disabled={loading}>
+              {loading ? "Creando..." : "Crear item"}
             </Button>
           </div>
         </div>
