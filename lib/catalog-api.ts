@@ -229,6 +229,33 @@ export const updateCatalog = async (
   return (await response.json()) as CatalogItem
 }
 
+export const deleteCatalog = async (catalogId: string, token: string) => {
+  const baseUrl = getApiBaseUrl()
+  const response = await fetch(`${baseUrl}/api/catalogos/${encodeURIComponent(catalogId)}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  if (response.status === 204) {
+    return { ok: true }
+  }
+  const text = await response.text().catch(() => "")
+  if (!text) {
+    return { ok: true }
+  }
+  try {
+    return JSON.parse(text)
+  } catch (err) {
+    return { ok: true }
+  }
+}
+
 export const fetchCatalogById = async (catalogId: string, token: string) => {
   const baseUrl = getApiBaseUrl()
   const response = await fetch(`${baseUrl}/api/catalogos/${catalogId}`, {

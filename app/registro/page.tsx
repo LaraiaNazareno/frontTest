@@ -6,21 +6,21 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export default function LoginPage() {
+export default function RegistroPage() {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
 
     setAuthLoading(true)
     setAuthError(null)
 
     try {
-      const response = await fetch(`${baseUrl}/api/auth/login`, {
+      const response = await fetch(`${baseUrl}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -30,19 +30,12 @@ export default function LoginPage() {
 
       if (!response.ok) {
         const message = await response.text().catch(() => "")
-        throw new Error(message || "No se pudo iniciar sesion.")
+        throw new Error(message || "No se pudo crear la cuenta.")
       }
 
-      const data = (await response.json()) as { token?: string }
-
-      if (!data.token) {
-        throw new Error("El backend no devolvio token.")
-      }
-
-      localStorage.setItem("token", data.token)
-      router.push("/")
+      router.push("/login")
     } catch (err) {
-      setAuthError(err instanceof Error ? err.message : "Error inesperado al iniciar sesion.")
+      setAuthError(err instanceof Error ? err.message : "Error inesperado al crear la cuenta.")
     } finally {
       setAuthLoading(false)
     }
@@ -52,8 +45,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background">
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-primary">Login</h1>
-          <p className="text-muted-foreground mt-2">Accede para ver tus catálogos y exportar PDFs.</p>
+          <h1 className="text-3xl font-bold text-primary">Registro</h1>
+          <p className="text-muted-foreground mt-2">Crea tu cuenta para administrar catálogos.</p>
         </div>
       </div>
 
@@ -72,14 +65,14 @@ export default function LoginPage() {
               placeholder="Password"
               type="password"
             />
-            <Button onClick={handleLogin} size="lg" className="w-full" disabled={authLoading}>
-              {authLoading ? "Ingresando..." : "Ingresar"}
+            <Button onClick={handleRegister} size="lg" className="w-full" disabled={authLoading}>
+              {authLoading ? "Creando cuenta..." : "Crear cuenta"}
             </Button>
             {authError && <p className="text-destructive text-sm">{authError}</p>}
             <p className="text-sm text-muted-foreground">
-              ¿No tenés cuenta?{" "}
-              <Link href="/registro" className="text-primary hover:underline">
-                Crear cuenta
+              ¿Ya tenés cuenta?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Ir a login
               </Link>
             </p>
           </div>

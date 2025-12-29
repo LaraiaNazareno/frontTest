@@ -1,8 +1,8 @@
-import Image from "next/image"
 import { GripVertical, Pencil, Save, Trash2, X } from "lucide-react"
 
 import type { Product } from "@/lib/catalog-types"
 import { Input } from "@/components/ui/input"
+import { ProductImage } from "@/components/catalog-v3/product-image"
 
 interface ChecklistViewProps {
   products: Product[]
@@ -82,14 +82,12 @@ export function ChecklistView({
               >
                 {/* Small thumbnail */}
                 <div className="flex-shrink-0">
-                  <div className="rounded-xl border-2 border-foreground/20 w-20 h-20 relative overflow-hidden">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.title}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
+                  <ProductImage
+                    src={product.image}
+                    alt={product.title}
+                    className="rounded-xl border-2 border-foreground/20 w-20 h-20"
+                    imageClassName="rounded-lg"
+                  />
                 </div>
 
                 {/* Product Info */}

@@ -222,11 +222,11 @@ export default function EditCatalogPage() {
               </div>
 
               <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
-                <Button asChild variant="outline" size="lg">
-                  <Link href="/">Cancelar</Link>
-                </Button>
                 <Button onClick={handleSubmit} size="lg" disabled={saving}>
                   {saving ? "Guardando..." : "Guardar cambios"}
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/">Cancelar</Link>
                 </Button>
               </div>
             </>

@@ -1,8 +1,8 @@
-import Image from "next/image"
 import { GripVertical, Pencil, Save, Trash2, X } from "lucide-react"
 
 import type { Product } from "@/lib/catalog-types"
 import { Input } from "@/components/ui/input"
+import { ProductImage } from "@/components/catalog-v3/product-image"
 
 interface TableViewProps {
   products: Product[]
@@ -68,14 +68,11 @@ export function TableView({
               style={backgroundStyle}
             >
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 relative rounded-lg overflow-hidden border-2 border-border flex-shrink-0">
-                  <Image
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+                <ProductImage
+                  src={product.image}
+                  alt={product.title}
+                  className="w-16 h-16 rounded-lg border-2 border-border flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   {editingItemUuid === product.itemUuid && editDraft && onEditChange ? (
                     <>
@@ -200,14 +197,11 @@ export function TableView({
                   }`}
                 >
                   <td className="py-4 px-6">
-                    <div className="w-20 h-20 relative rounded-lg overflow-hidden border-2 border-border flex-shrink-0">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                    <ProductImage
+                      src={product.image}
+                      alt={product.title}
+                      className="w-20 h-20 rounded-lg border-2 border-border flex-shrink-0"
+                    />
                   </td>
                   <td className="py-4 px-6">
                     {editingItemUuid === product.itemUuid && editDraft && onEditChange ? (

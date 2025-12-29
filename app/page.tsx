@@ -13,6 +13,7 @@ import type { CatalogItem, CatalogItemDetail, ViewMode } from "@/lib/catalog-typ
 import { formatPrice, isValidPrice, mapItemDetailsToProducts, normalizeHexColor } from "@/lib/catalog-utils"
 import {
   deleteCatalogItem,
+  deleteCatalog,
   exportCatalogPdfHtml,
   fetchCatalogItems,
   fetchCatalogs,
@@ -20,6 +21,7 @@ import {
   updateCatalogItem,
 } from "@/lib/catalog-api"
 import { buildCatalogPdfHtml } from "@/lib/pdf-template"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LayoutGrid, List, Download, Table, MoreHorizontal, Plus, Pencil, LogOut } from "lucide-react"
+import { LayoutGrid, List, Download, Table, MoreHorizontal, Plus, Pencil, LogOut, Trash2 } from "lucide-react"
 
 function CatalogPageContent() {
   const router = useRouter()
@@ -48,6 +50,8 @@ function CatalogPageContent() {
   const [catalogItemDetails, setCatalogItemDetails] = useState<CatalogItemDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingItems, setLoadingItems] = useState(false)
+  const [deletingCatalog, setDeletingCatalog] = useState(false)
+  const [pendingDeleteItemUuid, setPendingDeleteItemUuid] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [itemsError, setItemsError] = useState<string | null>(null)
   const [hasToken, setHasToken] = useState<boolean | null>(null)
@@ -232,6 +236,8 @@ function CatalogPageContent() {
     }
   }
 
+  const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
+
   const handleDeleteItem = async (itemUuid: string) => {
     if (!selectedCatalogId) {
       return
@@ -244,10 +250,6 @@ function CatalogPageContent() {
         description: "Inicia sesión para eliminar items.",
         variant: "destructive",
       })
-      return
-    }
-
-    if (!window.confirm("¿Eliminar este item? Esta acción no se puede deshacer.")) {
       return
     }
 
@@ -267,7 +269,54 @@ function CatalogPageContent() {
     }
   }
 
-  const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
+  const pendingDeleteItem = pendingDeleteItemUuid
+    ? catalogItemDetails.find((item) => getItemUuid(item) === pendingDeleteItemUuid)
+    : null
+
+  const handleConfirmDeleteItem = async () => {
+    if (!pendingDeleteItemUuid) {
+      return
+    }
+    const itemUuid = pendingDeleteItemUuid
+    setPendingDeleteItemUuid(null)
+    await handleDeleteItem(itemUuid)
+  }
+
+  const handleDeleteCatalog = async () => {
+    if (!selectedCatalogId) {
+      return
+    }
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      toast({
+        title: "No hay sesión",
+        description: "Inicia sesión para eliminar catálogos.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setDeletingCatalog(true)
+    try {
+      await deleteCatalog(selectedCatalogId, token)
+      toast({
+        title: "Catálogo eliminado",
+        description: "Se eliminó el catálogo correctamente.",
+      })
+      setSelectedCatalogId(null)
+      setCatalogItemDetails([])
+      await loadCatalogs()
+    } catch (err) {
+      toast({
+        title: "Error al eliminar catálogo",
+        description: err instanceof Error ? err.message : "No se pudo eliminar el catálogo.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingCatalog(false)
+    }
+  }
 
   const handleDragStart = (itemUuid: string) => {
     setDraggingItemUuid(itemUuid)
@@ -500,27 +549,51 @@ function CatalogPageContent() {
 
               {/* Actions */}
               <div className="flex gap-3 items-center flex-wrap justify-start lg:justify-end">
-                <Select
-                  value={selectedCatalogId ?? undefined}
-                  onValueChange={(value: string) => {
-                    setSelectedCatalogId(value)
-                    const nextCatalog = catalogItems.find((item) => item.id === value)
-                    if (nextCatalog) {
-                      setCatalogName(nextCatalog.title)
+                <div className="flex items-center gap-2 flex-row-reverse sm:flex-row">
+                  <ConfirmDialog
+                    title="Eliminar catálogo"
+                    description={
+                      selectedCatalog
+                        ? `¿Seguro que querés eliminar "${selectedCatalog.title}"? Esta acción no se puede deshacer.`
+                        : "Seleccioná un catálogo para poder eliminarlo."
                     }
-                  }}
-                >
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Selecciona un catálogo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {catalogItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.title}
-                      </SelectItem>
+                    confirmLabel={deletingCatalog ? "Eliminando..." : "Eliminar"}
+                    confirmDisabled={!selectedCatalog || deletingCatalog}
+                    onConfirm={handleDeleteCatalog}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                        disabled={!selectedCatalog || deletingCatalog}
+                        aria-label="Eliminar catálogo"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    }
+                  />
+                <Select
+                    value={selectedCatalogId ?? undefined}
+                    onValueChange={(value: string) => {
+                      setSelectedCatalogId(value)
+                      const nextCatalog = catalogItems.find((item) => item.id === value)
+                      if (nextCatalog) {
+                        setCatalogName(nextCatalog.title)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-64">
+                      <SelectValue placeholder="Selecciona un catálogo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {catalogItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.title}
+                        </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
                 <div className="flex gap-2">
                   <Button
                     variant={viewMode === "cards" ? "default" : "outline"}
@@ -563,6 +636,22 @@ function CatalogPageContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-12">
+        <ConfirmDialog
+          open={Boolean(pendingDeleteItemUuid)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingDeleteItemUuid(null)
+            }
+          }}
+          title="Eliminar item"
+          description={
+            pendingDeleteItem?.name
+              ? `¿Seguro que querés eliminar "${pendingDeleteItem.name}"? Esta acción no se puede deshacer.`
+              : "¿Seguro que querés eliminar este item? Esta acción no se puede deshacer."
+          }
+          confirmLabel="Eliminar"
+          onConfirm={handleConfirmDeleteItem}
+        />
         {loading && <p className="text-muted-foreground">Cargando catálogos...</p>}
         {error && <p className="text-destructive">{error}</p>}
         {itemsError && !(!loading && !error && !loadingItems && products.length === 0 && selectedCatalog) && (
@@ -581,7 +670,9 @@ function CatalogPageContent() {
         ) : (
           !loading &&
           !error &&
-          catalogItems.length === 0 && <p className="text-muted-foreground">No hay catálogos disponibles.</p>
+          catalogItems.length === 0 && (
+            <p className="text-muted-foreground text-center">No hay catálogos disponibles.</p>
+          )
         )}
         {loadingItems && <p className="text-muted-foreground">Cargando items...</p>}
         {!loading && !error && !loadingItems && products.length === 0 && selectedCatalog && (
@@ -596,11 +687,11 @@ function CatalogPageContent() {
           </div>
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "cards" && (
-          <SketchCardsView
-            products={products}
-            businessName={businessName}
-            cardBackgroundColor={componentColor}
-            onDeleteItem={handleDeleteItem}
+            <SketchCardsView
+              products={products}
+              businessName={businessName}
+              cardBackgroundColor={componentColor}
+              onDeleteItem={setPendingDeleteItemUuid}
             onStartEditItem={handleStartEditItem}
             onEditChange={handleEditChange}
             onEditSave={handleSaveEdit}
@@ -616,11 +707,11 @@ function CatalogPageContent() {
           />
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "checklist" && (
-          <ChecklistView
-            products={products}
-            businessName={businessName}
-            containerBackgroundColor={componentColor}
-            onDeleteItem={handleDeleteItem}
+            <ChecklistView
+              products={products}
+              businessName={businessName}
+              containerBackgroundColor={componentColor}
+              onDeleteItem={setPendingDeleteItemUuid}
             onStartEditItem={handleStartEditItem}
             onEditChange={handleEditChange}
             onEditSave={handleSaveEdit}
@@ -647,7 +738,7 @@ function CatalogPageContent() {
               products={products}
               businessName={businessName}
               backgroundColor={componentColor}
-              onDeleteItem={handleDeleteItem}
+              onDeleteItem={setPendingDeleteItemUuid}
               onStartEditItem={handleStartEditItem}
               onEditChange={handleEditChange}
               onEditSave={handleSaveEdit}

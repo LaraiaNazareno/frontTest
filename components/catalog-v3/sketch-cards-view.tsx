@@ -1,8 +1,8 @@
-import Image from "next/image"
 import { GripVertical, Pencil, Save, Trash2, X } from "lucide-react"
 
 import type { Product } from "@/lib/catalog-types"
 import { Input } from "@/components/ui/input"
+import { ProductImage } from "@/components/catalog-v3/product-image"
 
 interface SketchCardsViewProps {
   products: Product[]
@@ -169,16 +169,12 @@ export function SketchCardsView({
 
               {/* Product Image */}
               <div className="flex-shrink-0 w-full md:w-64 print-image">
-                <div className="rounded-2xl border-2 border-foreground/20 overflow-hidden">
-                  <div className="aspect-square relative">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.title}
-                      fill
-                      className="object-cover rounded-xl"
-                    />
-                  </div>
-                </div>
+                <ProductImage
+                  src={product.image}
+                  alt={product.title}
+                  className="rounded-2xl border-2 border-foreground/20 aspect-square w-full"
+                  imageClassName="rounded-xl"
+                />
               </div>
             </div>
           </div>
