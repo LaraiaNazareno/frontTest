@@ -22,6 +22,7 @@ import {
 } from "@/lib/catalog-api"
 import { buildCatalogPdfHtml } from "@/lib/pdf-template"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ProductImage } from "@/components/catalog-v3/product-image"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,8 +44,6 @@ function CatalogPageContent() {
   const searchParams = useSearchParams()
   const preferredCatalogId = searchParams.get("catalogId")
   const [viewMode, setViewMode] = useState<ViewMode>("cards")
-  const [catalogName, setCatalogName] = useState("Catálogos")
-  const [businessName, setBusinessName] = useState("Mi Negocio")
   const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([])
   const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null)
   const [catalogItemDetails, setCatalogItemDetails] = useState<CatalogItemDetail[]>([])
@@ -65,6 +64,8 @@ function CatalogPageContent() {
     () => catalogItems.find((item) => item.id === selectedCatalogId) || null,
     [catalogItems, selectedCatalogId],
   )
+  const businessName = selectedCatalog?.title ?? "Catálogo"
+  const hasCatalogs = catalogItems.length > 0
 
   const products = useMemo(() => mapItemDetailsToProducts(catalogItemDetails), [catalogItemDetails])
   const componentColor = normalizeHexColor(selectedCatalog?.componentColor) ?? "#FFFFFF"
@@ -94,7 +95,6 @@ function CatalogPageContent() {
       setCatalogItems(items)
       setSelectedCatalogId(nextSelectedId)
       const nextTitle = items.find((item) => item.id === nextSelectedId)?.title
-      setCatalogName((prev) => (prev === "Catálogos" ? nextTitle || prev : prev))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado al cargar el catálogo.")
     } finally {
@@ -533,18 +533,14 @@ function CatalogPageContent() {
 
               {/* Title Section */}
               <div className="min-w-[280px] max-w-3xl lg:flex-1 lg:max-w-xl lg:mx-6">
-                <Input
-                  value={catalogName}
-                  onChange={(e) => setCatalogName(e.target.value)}
-                  className="text-4xl font-bold border-none bg-transparent px-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 text-primary"
-                  placeholder="Catálogos"
-                />
-                <Input
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  className="text-lg text-muted-foreground border-none bg-transparent px-0 h-auto mt-4 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  placeholder="Tu marca"
-                />
+                <div className="mt-3">
+                  <ProductImage
+                    src={selectedCatalog?.logoUrl}
+                    alt={selectedCatalog?.title ?? "Logo del catálogo"}
+                    className="h-10 w-10 rounded-full border border-border"
+                    imageClassName="rounded-full"
+                  />
+                </div>
               </div>
 
               {/* Actions */}
@@ -573,24 +569,29 @@ function CatalogPageContent() {
                     }
                   />
                 <Select
-                    value={selectedCatalogId ?? undefined}
-                    onValueChange={(value: string) => {
-                      setSelectedCatalogId(value)
-                      const nextCatalog = catalogItems.find((item) => item.id === value)
-                      if (nextCatalog) {
-                        setCatalogName(nextCatalog.title)
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-64">
-                      <SelectValue placeholder="Selecciona un catálogo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {catalogItems.map((item) => (
+                  value={selectedCatalogId ?? undefined}
+                  disabled={!hasCatalogs}
+                  onValueChange={(value: string) => {
+                    setSelectedCatalogId(value)
+                  }}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue
+                      placeholder={hasCatalogs ? "Selecciona un catálogo" : "Sin catálogos"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hasCatalogs ? (
+                      catalogItems.map((item) => (
                         <SelectItem key={item.id} value={item.id}>
                           {item.title}
                         </SelectItem>
-                    ))}
+                      ))
+                    ) : (
+                      <SelectItem value="no-catalogs" disabled>
+                        No hay catálogos
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 </div>
@@ -671,7 +672,15 @@ function CatalogPageContent() {
           !loading &&
           !error &&
           catalogItems.length === 0 && (
-            <p className="text-muted-foreground text-center">No hay catálogos disponibles.</p>
+            <div className="rounded-2xl border border-border bg-card p-6 max-w-xl mx-auto text-center">
+              <h2 className="text-2xl font-bold text-foreground">No hay catálogos</h2>
+              <p className="text-muted-foreground mt-2">
+                Crea tu primer catálogo para empezar a cargar productos.
+              </p>
+              <Button asChild size="lg" className="mt-4">
+                <Link href="/catalogos/nuevo">Crear catálogo</Link>
+              </Button>
+            </div>
           )
         )}
         {loadingItems && <p className="text-muted-foreground">Cargando items...</p>}

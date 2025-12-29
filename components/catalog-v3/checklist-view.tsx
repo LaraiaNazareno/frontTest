@@ -58,7 +58,7 @@ export function ChecklistView({
           {/* Header */}
           <div className="mb-8 pb-6 border-b-2 border-dashed border-foreground/20">
             <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2" style={{ fontFamily: "cursive" }}>
-              Productos {businessName}
+              {businessName}
             </h2>
             <p className="text-muted-foreground">Catálogo completo con precios</p>
           </div>

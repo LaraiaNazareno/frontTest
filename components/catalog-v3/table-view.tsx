@@ -172,7 +172,7 @@ export function TableView({
             <thead>
               <tr className="border-b-2 border-border bg-muted/30" style={backgroundStyle}>
                 <th className="text-left py-4 px-6 font-semibold text-foreground">Imagen</th>
-                <th className="text-left py-4 px-6 font-semibold text-foreground">Producto</th>
+                <th className="text-left py-4 px-6 font-semibold text-foreground">Nombre</th>
                 <th className="text-left py-4 px-6 font-semibold text-foreground">Descripción</th>
                 <th className="text-right py-4 px-6 font-semibold text-foreground">Precio</th>
                 {(onDeleteItem || onStartEditItem) && (
