@@ -72,7 +72,7 @@ export const updateCatalogItem = async (
   payload: {
     catalogId: string
     name?: string
-    description?: string
+    description?: string | null
     price?: string
   },
 ) => {
@@ -301,7 +301,7 @@ export const createCatalogItem = async (
   payload: {
     catalogId: string
     name: string
-    description?: string
+    description?: string | null
     price: string
     image: File
   },
@@ -310,7 +310,9 @@ export const createCatalogItem = async (
   const formData = new FormData()
   formData.append("catalogoId", payload.catalogId)
   formData.append("name", payload.name)
-  formData.append("description", payload.description ?? "")
+  if (payload.description && payload.description.trim().length > 0) {
+    formData.append("description", payload.description)
+  }
   formData.append("price", payload.price)
   formData.append("image", payload.image)
 
