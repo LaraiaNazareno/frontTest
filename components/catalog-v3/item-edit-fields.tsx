@@ -9,6 +9,7 @@ type ItemEditFieldProps = {
   editDraft: EditDraft
   onEditChange: EditChangeHandler
   className?: string
+  disabled?: boolean
 }
 
 type ItemPriceEditFieldProps = {
@@ -18,6 +19,7 @@ type ItemPriceEditFieldProps = {
   inputClassName?: string
   currencyLabel?: string
   currencyClassName?: string
+  disabled?: boolean
 }
 
 export const getItemEditState = (
@@ -31,12 +33,19 @@ export const getItemEditState = (
   return { isEditing }
 }
 
-export function ItemEditField({ field, editDraft, onEditChange, className }: ItemEditFieldProps) {
+export function ItemEditField({
+  field,
+  editDraft,
+  onEditChange,
+  className,
+  disabled,
+}: ItemEditFieldProps) {
   return (
     <Input
       value={editDraft[field]}
       onChange={(event) => onEditChange(field, event.target.value)}
       className={className}
+      disabled={disabled}
     />
   )
 }
@@ -48,6 +57,7 @@ export function ItemPriceEditField({
   inputClassName,
   currencyLabel = "ARS",
   currencyClassName = "text-sm text-muted-foreground",
+  disabled,
 }: ItemPriceEditFieldProps) {
   return (
     <div className={wrapperClassName}>
@@ -56,6 +66,7 @@ export function ItemPriceEditField({
         editDraft={editDraft}
         onEditChange={onEditChange}
         className={inputClassName}
+        disabled={disabled}
       />
       <span className={currencyClassName}>{currencyLabel}</span>
     </div>

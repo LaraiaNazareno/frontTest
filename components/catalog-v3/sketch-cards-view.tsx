@@ -19,7 +19,9 @@ interface SketchCardsViewProps {
   onEditSave?: () => void
   onEditCancel?: () => void
   editingItemUuid?: string | null
+  savingItemUuid?: string | null
   editDraft?: EditDraft
+  highlightedItemUuid?: string | null
   onDragStart?: (itemUuid: string) => void
   onDragEnter?: (itemUuid: string) => void
   onDragOver?: (event: React.DragEvent) => void
@@ -38,7 +40,9 @@ export function SketchCardsView({
   onEditSave,
   onEditCancel,
   editingItemUuid,
+  savingItemUuid,
   editDraft,
+  highlightedItemUuid,
   onDragStart,
   onDragEnter,
   onDragOver,
@@ -56,6 +60,7 @@ export function SketchCardsView({
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       {products.map((product, index) => {
+        const itemUuid = product.itemUuid || product.id
         const isEven = index % 2 === 0
         const { isEditing } = getItemEditState(
           product.itemUuid,
@@ -63,21 +68,26 @@ export function SketchCardsView({
           editDraft,
           onEditChange,
         )
+        const isSaving = savingItemUuid === itemUuid
+        const isHighlighted = highlightedItemUuid === itemUuid
+        const isLocked = Boolean(editingItemUuid && editingItemUuid !== itemUuid)
 
         return (
           <div
             key={product.id}
             draggable={Boolean(onDragStart)}
-            onDragStart={() => onDragStart?.(product.itemUuid || product.id)}
-            onDragEnter={() => onDragEnter?.(product.itemUuid || product.id)}
+            onDragStart={() => onDragStart?.(itemUuid)}
+            onDragEnter={() => onDragEnter?.(itemUuid)}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
-            onDrop={() => onDrop?.(product.itemUuid || product.id)}
+            onDrop={() => onDrop?.(itemUuid)}
             className={`print-card bg-accent/30 border-2 border-foreground/20 rounded-3xl p-6 hover:shadow-xl transition-shadow ${
-              dragOverItemUuid === (product.itemUuid || product.id)
+              dragOverItemUuid === itemUuid
                 ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-3 before:h-0.5 before:bg-primary/70"
                 : ""
-            }`}
+            } ${isHighlighted ? "ring-2 ring-primary/30" : ""} ${
+              isEditing ? "ring-1 ring-primary/30 bg-primary/5" : ""
+            } ${isEditing ? "mb-2 sm:mb-3" : ""}`}
             style={cardBackgroundColor ? { backgroundColor: cardBackgroundColor } : undefined}
           >
             <div
@@ -90,6 +100,7 @@ export function SketchCardsView({
                     field="name"
                     editDraft={editDraft}
                     onEditChange={onEditChange}
+                    disabled={isSaving}
                     className="text-2xl font-bold"
                   />
                 ) : (
@@ -101,6 +112,7 @@ export function SketchCardsView({
                     field="description"
                     editDraft={editDraft}
                     onEditChange={onEditChange}
+                    disabled={isSaving}
                     className="text-sm"
                   />
                 ) : (
@@ -113,12 +125,13 @@ export function SketchCardsView({
                     <ItemPriceEditField
                       editDraft={editDraft}
                       onEditChange={onEditChange}
+                      disabled={isSaving}
                       wrapperClassName="flex items-center gap-2"
                       inputClassName="w-28"
                     />
                   ) : (
-                    <div className="border-2 border-foreground/30 rounded-xl px-4 py-2 bg-transparent">
-                      <p className="font-bold text-foreground text-lg">{formatPrice(product.price)}</p>
+                    <div className="text-lg font-semibold text-foreground">
+                      {formatPrice(product.price)}
                     </div>
                   )}
                 </div>
@@ -127,6 +140,8 @@ export function SketchCardsView({
                   <ItemActionButtons
                     className="flex items-center gap-3"
                     isEditing={isEditing}
+                    isSaving={isSaving}
+                    isLocked={isLocked}
                     onSave={() => onEditSave?.()}
                     onCancel={() => onEditCancel?.()}
                     onEdit={onStartEditItem ? () => onStartEditItem(product) : undefined}

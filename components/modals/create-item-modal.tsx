@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import { useFilePreview } from "@/hooks/use-file-preview"
 import { createCatalogItem } from "@/lib/catalog-api"
+import { isValidPrice } from "@/lib/catalog-utils"
 import {
   normalizeOptionalDescription,
   requireCatalogId,
@@ -30,8 +31,13 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
   const [price, setPrice] = useState("")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [creating, setCreating] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const previewUrl = useFilePreview(imageFile)
+  const isNameValid = name.trim().length > 0
+  const isPriceValid = isValidPrice(price)
+  const isCreateDisabled = creating || !isNameValid || !isPriceValid
 
   useEffect(() => {
     if (!open) {
@@ -40,8 +46,33 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
       setPrice("")
       setImageFile(null)
       setCreating(false)
+      setIsDragging(false)
     }
   }, [open])
+
+  const handleFileSelect = (file: File | null) => {
+    if (!file) {
+      return
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Formato no válido",
+        description: "Sube una imagen en formato JPG, PNG o WebP.",
+        variant: "destructive",
+      })
+      return
+    }
+    setImageFile(file)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) {
+      handleFileSelect(file)
+    }
+  }
 
   const handleCreate = async () => {
     const token = requireToken(toast, {
@@ -108,20 +139,32 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Nuevo item</DialogTitle>
-          <DialogDescription>Agrega un producto al catálogo.</DialogDescription>
+    <Dialog open={open} onOpenChange={(nextOpen) => (!creating ? onOpenChange(nextOpen) : null)}>
+      <DialogContent className="sm:max-w-3xl border border-border/80 bg-card">
+        <DialogHeader className="border-b border-border/80 pb-4">
+          <DialogTitle className="text-lg text-foreground">Nuevo item</DialogTitle>
+          <DialogDescription className="text-foreground/70">
+            Agrega un producto al catálogo.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-5 sm:grid-cols-[1.3fr_0.7fr]">
-          <div className="space-y-4">
+        <div className="grid gap-6">
+          <fieldset className="space-y-5" disabled={creating}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Nombre</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Silla" />
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Nombre
+              </label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Silla"
+                className="h-12 text-lg"
+                autoFocus
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Descripción</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Descripción
+              </label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -129,38 +172,80 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Precio</label>
-              <Input
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="25.00"
-                inputMode="decimal"
-              />
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Precio
+              </label>
+              <div className="inline-flex items-center rounded-md border border-input bg-background px-3">
+                <Input
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder="25.00"
+                  inputMode="decimal"
+                  className="h-10 w-28 border-0 bg-transparent px-0 pr-2 shadow-none focus-visible:ring-0 focus-visible:border-0"
+                />
+                <span className="text-xs font-medium text-muted-foreground">
+                  ARS
+                </span>
+              </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Imagen</label>
-              <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-foreground">Vista previa</p>
-            <div className="rounded-2xl border border-border bg-card/70 p-4">
-              {previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl} alt="Vista previa" className="h-52 w-full rounded-xl object-cover" />
-              ) : (
-                <div className="flex h-52 w-full items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-                  Sin imagen
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Imagen
+              </label>
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`cursor-pointer rounded-xl border border-dashed px-4 py-6 text-center text-sm transition-colors ${
+                  isDragging
+                    ? "border-primary/60 bg-primary/5 text-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                <div className="text-sm font-semibold text-foreground">
+                  {previewUrl ? "Cambiar imagen" : "Soltá tu imagen acá"}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground">
+                  {previewUrl ? "o hacé click para reemplazar" : "o hacé click para subir"}
+                </div>
+                {previewUrl && (
+                  <div className="mt-3 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl}
+                      alt="Vista previa"
+                      className="h-16 w-16 rounded-lg border border-border/70 object-cover"
+                    />
+                  </div>
+                )}
+                {imageFile && (
+                  <div className="mt-2 text-xs text-foreground/80">Archivo: {imageFile.name}</div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+              />
             </div>
-          </div>
+          </fieldset>
         </div>
-        <DialogFooter>
-          <Button size="lg" onClick={handleCreate} disabled={creating}>
+        <DialogFooter className="border-t border-border/80 pt-4">
+          <Button
+            size="lg"
+            onClick={handleCreate}
+            disabled={isCreateDisabled}
+            className="bg-primary hover:bg-primary/90 disabled:bg-primary/40"
+          >
             {creating ? "Creando..." : "Crear item"}
           </Button>
-          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} disabled={creating}>
             Cancelar
           </Button>
         </DialogFooter>

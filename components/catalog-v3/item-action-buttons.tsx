@@ -1,9 +1,11 @@
 "use client"
 
-import { GripVertical, Pencil, Save, Trash2, X } from "lucide-react"
+import { GripVertical, Pencil, Save, Trash2 } from "lucide-react"
 
 type ItemActionButtonsProps = {
   isEditing: boolean
+  isSaving?: boolean
+  isLocked?: boolean
   onSave?: () => void
   onCancel?: () => void
   onEdit?: () => void
@@ -15,6 +17,8 @@ type ItemActionButtonsProps = {
 
 export function ItemActionButtons({
   isEditing,
+  isSaving,
+  isLocked,
   onSave,
   onCancel,
   onEdit,
@@ -29,17 +33,18 @@ export function ItemActionButtons({
         <button
           type="button"
           onClick={onSave}
-          className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-muted/50"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-60"
+          disabled={isSaving}
         >
           <Save className="h-4 w-4" />
-          Guardar
+          {isSaving ? "Guardando..." : "Guardar"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted/40"
+          className="inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground/70 hover:text-foreground hover:bg-muted/10 disabled:opacity-60"
+          disabled={isSaving}
         >
-          <X className="h-4 w-4" />
           Cancelar
         </button>
       </div>
@@ -52,14 +57,19 @@ export function ItemActionButtons({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-muted/40"
+          className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground/70 hover:text-foreground hover:bg-muted/10 disabled:opacity-60"
+          disabled={isSaving || isLocked}
         >
           <Pencil className="h-4 w-4" />
           Editar
         </button>
       )}
       {showDrag && (
-        <span className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm font-medium text-foreground/70">
+        <span
+          className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground/70 ${
+            isLocked ? "opacity-50" : ""
+          }`}
+        >
           <GripVertical className="h-4 w-4" />
           Mover
         </span>
@@ -68,7 +78,8 @@ export function ItemActionButtons({
         <button
           type="button"
           onClick={onDelete}
-          className="inline-flex items-center justify-center rounded-full border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+          className="inline-flex items-center justify-center rounded-full px-2.5 py-1.5 text-destructive/80 hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+          disabled={isSaving || isLocked}
           aria-label="Eliminar item"
         >
           <Trash2 className="h-4 w-4" />

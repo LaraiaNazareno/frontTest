@@ -1,5 +1,6 @@
 "use client"
 
+import type { Dispatch, SetStateAction } from "react"
 import { useCallback, useEffect, useState } from "react"
 
 import type { CatalogItemDetail } from "@/lib/catalog-types"
@@ -11,7 +12,7 @@ type UseCatalogItemsResult = {
   error: string | null
   reload: () => Promise<void>
   clear: () => void
-  setItems: (items: CatalogItemDetail[]) => void
+  setItems: Dispatch<SetStateAction<CatalogItemDetail[]>>
 }
 
 export const useCatalogItems = (selectedCatalogId: string | null): UseCatalogItemsResult => {

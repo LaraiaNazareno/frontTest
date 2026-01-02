@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -37,8 +37,13 @@ export function CatalogModal({
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [titleError, setTitleError] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const previewUrl = useFilePreview(logoFile)
+  const isTitleValid = title.trim().length >= 2
+  const isSubmitDisabled = saving || !isTitleValid
 
   useEffect(() => {
     if (!open) {
@@ -72,10 +77,46 @@ export function CatalogModal({
       setLogoUrl(null)
       setLogoFile(null)
       setSaving(false)
+      setIsDragging(false)
+      setTitleError(false)
     }
   }, [open])
 
+  useEffect(() => {
+    if (titleError && title.trim().length >= 2) {
+      setTitleError(false)
+    }
+  }, [title, titleError])
+
+  const handleFileSelect = (file: File | null) => {
+    if (!file) {
+      return
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Formato no válido",
+        description: "Sube una imagen en formato JPG, PNG o WebP.",
+        variant: "destructive",
+      })
+      return
+    }
+    setLogoFile(file)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
+    const file = event.dataTransfer.files?.[0]
+    if (file) {
+      handleFileSelect(file)
+    }
+  }
+
   const handleSave = async () => {
+    if (saving) {
+      return
+    }
+
     const token = requireToken(toast, {
       title: "No hay sesión",
       description: "Inicia sesión para editar un catálogo.",
@@ -98,6 +139,17 @@ export function CatalogModal({
       description: "Ingresa un título para el catálogo.",
     })
     if (!resolvedTitle) {
+      setTitleError(true)
+      return
+    }
+
+    if (resolvedTitle.trim().length < 2) {
+      toast({
+        title: "Nombre muy corto",
+        description: "Usa al menos 2 caracteres.",
+        variant: "destructive",
+      })
+      setTitleError(true)
       return
     }
 
@@ -140,7 +192,6 @@ export function CatalogModal({
 
         toast({
           title: "Catálogo creado",
-          description: "Se creó el catálogo correctamente.",
         })
 
         onOpenChange(false)
@@ -198,75 +249,131 @@ export function CatalogModal({
 
   const modalTitle = mode === "create" ? "Nuevo catálogo" : "Editar catálogo"
   const modalDescription =
-    mode === "create" ? "Crea un catálogo y sube su imagen." : "Actualiza la información del catálogo."
+    mode === "create"
+      ? "Creá un catálogo para exportar a PDF."
+      : "Actualiza la información del catálogo."
   const submitLabel =
     mode === "create" ? (saving ? "Creando..." : "Crear catálogo") : saving ? "Guardando..." : "Guardar cambios"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{modalTitle}</DialogTitle>
-          <DialogDescription>{modalDescription}</DialogDescription>
+    <Dialog open={open} onOpenChange={(nextOpen) => (!saving ? onOpenChange(nextOpen) : null)}>
+      <DialogContent className="sm:max-w-2xl border border-border/80 bg-card">
+        <DialogHeader className="border-b border-border/80 pb-4">
+          <DialogTitle className="text-lg text-foreground">{modalTitle}</DialogTitle>
+          <DialogDescription className="text-foreground/70">{modalDescription}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-6 sm:grid-cols-[1.4fr_0.6fr]">
-          <div className="space-y-4">
+        <form
+          className="space-y-6"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!isSubmitDisabled) {
+              void handleSave()
+            }
+          }}
+        >
+          <fieldset className="space-y-5" disabled={saving}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Título</label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Mi catálogo" />
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Nombre
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Mi catálogo"
+                autoFocus
+                className={`h-11 text-base ${titleError ? "border-destructive focus-visible:ring-destructive/30" : ""}`}
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Descripción</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Descripción
+              </label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descripción del catálogo"
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ColorPickerField
-                label="Color de fondo"
-                value={backgroundColor}
-                placeholder="#FFFFFF"
-                onChange={setBackgroundColor}
-              />
-              <ColorPickerField
-                label="Color de componente"
-                value={componentColor}
-                placeholder="#F2BADE"
-                onChange={setComponentColor}
-              />
-            </div>
+            <details className="rounded-lg border border-border/70 bg-card/40 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Personalización (opcional)
+              </summary>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <ColorPickerField
+                  label="Color de fondo"
+                  value={backgroundColor}
+                  placeholder="#FFFFFF"
+                  onChange={setBackgroundColor}
+                />
+                <ColorPickerField
+                  label="Color de componente"
+                  value={componentColor}
+                  placeholder="#F2BADE"
+                  onChange={setComponentColor}
+                />
+              </div>
+            </details>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Imagen</label>
-              <Input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} />
-            </div>
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-foreground">Vista previa</p>
-            <div className="rounded-2xl border border-border bg-card/70 p-4">
-              {previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={previewUrl} alt="Vista previa" className="h-56 w-full rounded-xl object-cover" />
-              ) : logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt="Logo actual" className="h-56 w-full rounded-xl object-cover" />
-              ) : (
-                <div className="flex h-56 w-full items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-                  Sin imagen
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
+                Imagen (opcional para portada del PDF)
+              </label>
+              <div
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`cursor-pointer rounded-xl border border-dashed px-4 py-5 text-center text-sm transition-colors ${
+                  isDragging
+                    ? "border-primary/60 bg-primary/5 text-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                <div className="text-sm font-semibold text-foreground">
+                  {previewUrl || logoUrl ? "Cambiar imagen" : "Soltá tu imagen acá"}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground">
+                  {previewUrl || logoUrl ? "o hacé click para reemplazar" : "o hacé click para subir"}
+                </div>
+                {(previewUrl || logoUrl) && (
+                  <div className="mt-3 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl ?? logoUrl ?? undefined}
+                      alt="Vista previa"
+                      className="h-16 w-16 rounded-lg border border-border/70 object-cover"
+                    />
+                  </div>
+                )}
+                {logoFile && (
+                  <div className="mt-2 text-xs text-foreground/80">Archivo: {logoFile.name}</div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+              />
             </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button size="lg" onClick={handleSave} disabled={saving}>
-            {submitLabel}
-          </Button>
-          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-        </DialogFooter>
+          </fieldset>
+          <DialogFooter className="border-t border-border/80 pt-4">
+            <Button
+              size="lg"
+              type="submit"
+              disabled={isSubmitDisabled}
+              className="bg-primary hover:bg-primary/90 disabled:bg-primary/40"
+            >
+              {submitLabel}
+            </Button>
+            <Button variant="outline" size="lg" type="button" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

@@ -19,7 +19,9 @@ interface TableViewProps {
   onEditSave?: () => void
   onEditCancel?: () => void
   editingItemUuid?: string | null
+  savingItemUuid?: string | null
   editDraft?: EditDraft
+  highlightedItemUuid?: string | null
   onDragStart?: (itemUuid: string) => void
   onDragEnter?: (itemUuid: string) => void
   onDragOver?: (event: React.DragEvent) => void
@@ -38,7 +40,9 @@ export function TableView({
   onEditSave,
   onEditCancel,
   editingItemUuid,
+  savingItemUuid,
   editDraft,
+  highlightedItemUuid,
   onDragStart,
   onDragEnter,
   onDragOver,
@@ -57,26 +61,32 @@ export function TableView({
 
         <div className="sm:hidden space-y-4 px-4 py-6">
           {products.map((product) => {
+            const itemUuid = product.itemUuid || product.id
             const { isEditing } = getItemEditState(
               product.itemUuid,
               editingItemUuid,
               editDraft,
               onEditChange,
             )
+            const isSaving = savingItemUuid === itemUuid
+            const isHighlighted = highlightedItemUuid === itemUuid
+            const isLocked = Boolean(editingItemUuid && editingItemUuid !== itemUuid)
 
             return (
               <div
               key={product.id}
               draggable={Boolean(onDragStart)}
-              onDragStart={() => onDragStart?.(product.itemUuid || product.id)}
-              onDragEnter={() => onDragEnter?.(product.itemUuid || product.id)}
+              onDragStart={() => onDragStart?.(itemUuid)}
+              onDragEnter={() => onDragEnter?.(itemUuid)}
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
-              onDrop={() => onDrop?.(product.itemUuid || product.id)}
+              onDrop={() => onDrop?.(itemUuid)}
               className={`rounded-2xl border border-border p-4 bg-card/70 ${
-                dragOverItemUuid === (product.itemUuid || product.id)
+                dragOverItemUuid === itemUuid
                   ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-1 before:h-0.5 before:bg-primary/70"
                   : ""
+              } ${isHighlighted ? "bg-primary/5" : ""} ${
+                isEditing ? "bg-muted/20 border-primary/20 border-dashed mb-2" : ""
               }`}
               style={backgroundStyle}
               >
@@ -93,12 +103,15 @@ export function TableView({
                         field="name"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
-                        className="mb-2"
+                        disabled={isSaving}
+                        className="mb-2 h-8 text-sm"
                       />
                       <ItemEditField
                         field="description"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
+                        className="h-8 text-sm"
                       />
                     </>
                   ) : (
@@ -115,8 +128,9 @@ export function TableView({
                   <ItemPriceEditField
                     editDraft={editDraft}
                     onEditChange={onEditChange}
+                    disabled={isSaving}
                     wrapperClassName="flex items-center gap-2"
-                    inputClassName="w-28 text-right"
+                    inputClassName="h-8 w-24 text-right text-sm"
                   />
                 ) : (
                   <p className="font-bold text-foreground">${product.price.toLocaleString("es-AR")}</p>
@@ -126,6 +140,8 @@ export function TableView({
                   <ItemActionButtons
                     className="flex items-center gap-2"
                     isEditing={isEditing}
+                    isSaving={isSaving}
+                    isLocked={isLocked}
                     onSave={() => onEditSave?.()}
                     onCancel={() => onEditCancel?.()}
                     onEdit={onStartEditItem && product.itemUuid ? () => onStartEditItem(product) : undefined}
@@ -155,26 +171,32 @@ export function TableView({
             </thead>
             <tbody>
               {products.map((product) => {
+                const itemUuid = product.itemUuid || product.id
                 const { isEditing } = getItemEditState(
                   product.itemUuid,
                   editingItemUuid,
                   editDraft,
                   onEditChange,
                 )
+                const isSaving = savingItemUuid === itemUuid
+                const isHighlighted = highlightedItemUuid === itemUuid
+                const isLocked = Boolean(editingItemUuid && editingItemUuid !== itemUuid)
 
                 return (
                   <tr
                   key={product.id}
                   draggable={Boolean(onDragStart)}
-                  onDragStart={() => onDragStart?.(product.itemUuid || product.id)}
-                  onDragEnter={() => onDragEnter?.(product.itemUuid || product.id)}
+                  onDragStart={() => onDragStart?.(itemUuid)}
+                  onDragEnter={() => onDragEnter?.(itemUuid)}
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
-                  onDrop={() => onDrop?.(product.itemUuid || product.id)}
+                  onDrop={() => onDrop?.(itemUuid)}
                   className={`border-b border-border hover:bg-muted/20 transition-colors ${
-                    dragOverItemUuid === (product.itemUuid || product.id)
+                    dragOverItemUuid === itemUuid
                       ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-1 before:h-0.5 before:bg-primary/70"
                       : ""
+                  } ${isHighlighted ? "bg-primary/5" : ""} ${
+                    isEditing ? "bg-muted/20 border-b-2 border-dashed border-primary/20" : ""
                   }`}
                   >
                   <td className="py-4 px-6">
@@ -190,6 +212,8 @@ export function TableView({
                         field="name"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
+                        className="h-8 text-sm"
                       />
                     ) : (
                       <p className="font-semibold text-foreground">{product.title}</p>
@@ -201,28 +225,33 @@ export function TableView({
                         field="description"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
+                        className="h-8 text-sm"
                       />
                     ) : (
                       <p className="text-sm text-muted-foreground max-w-md">{product.description}</p>
                     )}
                   </td>
-                  <td className="py-4 px-6 text-right">
+                  <td className="py-4 px-6 text-right align-middle">
                     {isEditing && editDraft && onEditChange ? (
                       <ItemPriceEditField
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
                         wrapperClassName="flex items-center justify-end gap-2"
-                        inputClassName="w-28 text-right"
+                        inputClassName="h-8 w-24 text-right text-sm"
                       />
                     ) : (
                       <p className="font-bold text-lg text-foreground">${product.price.toLocaleString("es-AR")}</p>
                     )}
                   </td>
                   {(onDeleteItem || onStartEditItem) && (
-                    <td className="py-4 px-6 text-right">
+                    <td className="py-4 px-6 text-right align-middle">
                       <ItemActionButtons
                         className="flex items-center justify-end gap-3 mt-2"
                         isEditing={isEditing}
+                        isSaving={isSaving}
+                        isLocked={isLocked}
                         onSave={() => onEditSave?.()}
                         onCancel={() => onEditCancel?.()}
                         onEdit={onStartEditItem && product.itemUuid ? () => onStartEditItem(product) : undefined}

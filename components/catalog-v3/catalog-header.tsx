@@ -1,10 +1,8 @@
 "use client"
 
-import Link from "next/link"
-
 import type { CatalogItem, ViewMode } from "@/lib/catalog-types"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ProductImage } from "@/components/catalog-v3/product-image"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   DropdownMenu,
@@ -14,7 +12,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, LayoutGrid, List, LogOut, MoreHorizontal, Pencil, Plus, Table, Trash2 } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Download,
+  LayoutGrid,
+  List,
+  LogOut,
+  Menu,
+  Pencil,
+  Plus,
+  Table,
+  Trash2,
+} from "lucide-react"
 
 type CatalogHeaderProps = {
   hasToken: boolean | null
@@ -53,157 +62,153 @@ export function CatalogHeader({
 }: CatalogHeaderProps) {
   return (
     <div className="border-b border-border bg-card">
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex items-center gap-3">
-              {hasToken && (
-                <DropdownMenu>
+      <div className="container mx-auto px-10 py-5">
+        <div className="flex min-h-[60px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            {hasToken && (
+              <DropdownMenu>
+                <Tooltip>
+                <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="default"
-                      size="lg"
-                      className="gap-2 rounded-full px-6 shadow-md shadow-primary/20"
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      aria-label="Más acciones"
                     >
-                      <MoreHorizontal className="h-5 w-5" />
-                      Acciones
+                      <Menu className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="bg-card text-foreground border-border shadow-lg"
+                </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={6}>
+                    Acciones del catálogo
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-card text-foreground border-border shadow-lg"
+                >
+                  <DropdownMenuItem
+                    onSelect={onOpenCreateCatalog}
+                    className="focus:bg-primary/10 focus:text-foreground"
                   >
+                    <Plus className="h-4 w-4" />
+                    Nuevo catálogo
+                  </DropdownMenuItem>
+                  {selectedCatalog && (
                     <DropdownMenuItem
-                      onSelect={onOpenCreateCatalog}
+                      onSelect={onOpenEditCatalog}
                       className="focus:bg-primary/10 focus:text-foreground"
                     >
-                      <Plus className="h-4 w-4" />
-                      Nuevo catálogo
+                      <Pencil className="h-4 w-4" />
+                      Editar catálogo
                     </DropdownMenuItem>
-                    {selectedCatalog && (
+                  )}
+                  <DropdownMenuSeparator />
+                  <ConfirmDialog
+                    title="Eliminar catálogo"
+                    description={
+                      selectedCatalog
+                        ? `¿Seguro que querés eliminar "${selectedCatalog.title}"? Esta acción no se puede deshacer.`
+                        : "Seleccioná un catálogo para poder eliminarlo."
+                    }
+                    confirmLabel={deletingCatalog ? "Eliminando..." : "Eliminar"}
+                    confirmDisabled={!selectedCatalog || deletingCatalog}
+                    onConfirm={onDeleteCatalog}
+                    trigger={
                       <DropdownMenuItem
-                        onSelect={onOpenCreateItem}
-                        className="focus:bg-primary/10 focus:text-foreground"
+                        variant="destructive"
+                        onSelect={(event) => event.preventDefault()}
+                        disabled={!selectedCatalog || deletingCatalog}
                       >
-                        <Plus className="h-4 w-4" />
-                        Nuevo item
+                        <Trash2 className="h-4 w-4" />
+                        Eliminar catálogo
                       </DropdownMenuItem>
-                    )}
-                    {selectedCatalog && (
-                      <DropdownMenuItem
-                        onSelect={onOpenEditCatalog}
-                        className="focus:bg-primary/10 focus:text-foreground"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Editar catálogo
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" onSelect={onLogout}>
-                      <LogOut className="h-4 w-4" />
-                      Cerrar sesión
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-
-            <div className="min-w-[280px] max-w-3xl lg:flex-1 lg:max-w-xl lg:mx-6">
-              <div className="mt-3">
-                <ProductImage
-                  src={selectedCatalog?.logoUrl}
-                  alt={selectedCatalog?.title ?? "Logo del catálogo"}
-                  className="h-10 w-10 rounded-full border border-border"
-                  imageClassName="rounded-full"
+                    }
+                  />
+                  <DropdownMenuItem variant="destructive" onSelect={onLogout}>
+                    <LogOut className="h-4 w-4" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            <span className="text-sm text-muted-foreground">Catálogo:</span>
+            <Select
+              value={selectedCatalogId ?? undefined}
+              disabled={!hasCatalogs}
+              onValueChange={(value: string) => onSelectCatalog(value)}
+            >
+              <SelectTrigger className="h-9 w-64 rounded-full bg-background">
+                <SelectValue
+                  placeholder={hasCatalogs ? "Selecciona un catálogo" : "Sin catálogos"}
                 />
-              </div>
-            </div>
+              </SelectTrigger>
+              <SelectContent>
+                {hasCatalogs ? (
+                  catalogs.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.title}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-catalogs" disabled>
+                    No hay catálogos
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="flex gap-3 items-center flex-wrap justify-start lg:justify-end">
-              <div className="flex items-center gap-2 flex-row-reverse sm:flex-row">
-                <ConfirmDialog
-                  title="Eliminar catálogo"
-                  description={
-                    selectedCatalog
-                      ? `¿Seguro que querés eliminar "${selectedCatalog.title}"? Esta acción no se puede deshacer.`
-                      : "Seleccioná un catálogo para poder eliminarlo."
-                  }
-                  confirmLabel={deletingCatalog ? "Eliminando..." : "Eliminar"}
-                  confirmDisabled={!selectedCatalog || deletingCatalog}
-                  onConfirm={onDeleteCatalog}
-                  trigger={
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full border-destructive/40 bg-transparent text-destructive hover:bg-destructive/10"
-                      disabled={!selectedCatalog || deletingCatalog}
-                      aria-label="Eliminar catálogo"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  }
-                />
-                <Select
-                  value={selectedCatalogId ?? undefined}
-                  disabled={!hasCatalogs}
-                  onValueChange={(value: string) => onSelectCatalog(value)}
-                >
-                  <SelectTrigger className="w-64">
-                    <SelectValue
-                      placeholder={hasCatalogs ? "Selecciona un catálogo" : "Sin catálogos"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {hasCatalogs ? (
-                      catalogs.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.title}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-catalogs" disabled>
-                        No hay catálogos
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "cards" ? "default" : "outline"}
-                  onClick={() => onViewModeChange("cards")}
-                  size="lg"
-                  className="gap-2 rounded-full px-5"
-                >
-                  <LayoutGrid className="h-5 w-5" />
-                  <span>Tarjetas</span>
-                </Button>
-                <Button
-                  variant={viewMode === "checklist" ? "default" : "outline"}
-                  onClick={() => onViewModeChange("checklist")}
-                  size="lg"
-                  className="gap-2 rounded-full px-5"
-                >
-                  <List className="h-5 w-5" />
-                  <span>Lista</span>
-                </Button>
-                <Button
-                  variant={viewMode === "table" ? "default" : "outline"}
-                  onClick={() => onViewModeChange("table")}
-                  size="lg"
-                  className="gap-2 rounded-full px-5"
-                >
-                  <Table className="h-5 w-5" />
-                  <span>Tabla</span>
-                </Button>
-              </div>
-
+          <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+            <div className="flex items-center gap-1 rounded-full bg-transparent p-1">
               <Button
-                onClick={onExportPdf}
-                size="lg"
-                className="gap-2 rounded-full px-6 bg-primary hover:bg-primary/90"
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewModeChange("cards")}
+                className={cn(
+                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  viewMode === "cards"
+                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
+                    : "hover:bg-muted/10"
+                )}
               >
-                <Download className="h-5 w-5" />
+                <LayoutGrid className="h-4 w-4" />
+                <span>Tarjetas</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewModeChange("checklist")}
+                className={cn(
+                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  viewMode === "checklist"
+                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
+                    : "hover:bg-muted/10"
+                )}
+              >
+                <List className="h-4 w-4" />
+                <span>Lista</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewModeChange("table")}
+                className={cn(
+                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  viewMode === "table"
+                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
+                    : "hover:bg-muted/10"
+                )}
+              >
+                <Table className="h-4 w-4" />
+                <span>Tabla</span>
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button onClick={onExportPdf} size="default" className="gap-2 rounded-full px-5">
+                <Download className="h-4 w-4" />
                 <span>Exportar PDF</span>
               </Button>
             </div>

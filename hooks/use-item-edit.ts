@@ -11,24 +11,32 @@ type EditDraft = { name: string; description: string; price: string }
 
 type UseItemEditProps = {
   selectedCatalogId: string | null
-  onSaved?: () => Promise<void> | void
+  onSaved?: (itemUuid: string, updates: Partial<CatalogItemDetail>) => Promise<void> | void
 }
 
 export const useItemEdit = ({ selectedCatalogId, onSaved }: UseItemEditProps) => {
   const [editingItemUuid, setEditingItemUuid] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<EditDraft>({ name: "", description: "", price: "" })
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingItemUuid, setSavingItemUuid] = useState<string | null>(null)
 
-  const startEdit = useCallback((item: { itemUuid?: string; title: string; description: string; price: number }) => {
-    if (!item.itemUuid) {
-      return
-    }
-    setEditingItemUuid(item.itemUuid)
-    setEditDraft({
-      name: item.title,
-      description: item.description ?? "",
-      price: item.price.toFixed(2),
-    })
-  }, [])
+  const startEdit = useCallback(
+    (item: { itemUuid?: string; title: string; description: string; price: number }) => {
+      if (isSaving) {
+        return
+      }
+      if (!item.itemUuid) {
+        return
+      }
+      setEditingItemUuid(item.itemUuid)
+      setEditDraft({
+        name: item.title,
+        description: item.description ?? "",
+        price: item.price.toFixed(2),
+      })
+    },
+    [isSaving],
+  )
 
   const changeEdit = useCallback((field: "name" | "description" | "price", value: string) => {
     setEditDraft((prev) => ({ ...prev, [field]: value }))
@@ -36,10 +44,11 @@ export const useItemEdit = ({ selectedCatalogId, onSaved }: UseItemEditProps) =>
 
   const cancelEdit = useCallback(() => {
     setEditingItemUuid(null)
+    setEditDraft({ name: "", description: "", price: "" })
   }, [])
 
   const saveEdit = useCallback(async () => {
-    if (!editingItemUuid || !selectedCatalogId) {
+    if (!editingItemUuid || !selectedCatalogId || isSaving) {
       return
     }
 
@@ -65,26 +74,49 @@ export const useItemEdit = ({ selectedCatalogId, onSaved }: UseItemEditProps) =>
     }
 
     try {
-      await updateCatalogItem(editingItemUuid, token, {
+      setIsSaving(true)
+      setSavingItemUuid(editingItemUuid)
+      const response = (await updateCatalogItem(editingItemUuid, token, {
         catalogId: selectedCatalogId,
         name,
         description: normalizeOptionalDescription(editDraft.description),
         price,
-      })
+      })) as Partial<CatalogItemDetail>
+      const normalizedDescription = normalizeOptionalDescription(editDraft.description) ?? ""
+      const updates: Partial<CatalogItemDetail> = {
+        name: response?.name ?? name,
+        description: response?.description ?? normalizedDescription,
+        price: response?.price ?? price,
+      }
+      if (response?.image !== undefined) {
+        updates.image = response.image
+      }
+      if (response?.id) {
+        updates.id = response.id
+      }
+      if (response?.uuid) {
+        updates.uuid = response.uuid
+      }
+      if (response?.catalogId) {
+        updates.catalogId = response.catalogId
+      }
       toast({
         title: "Item actualizado",
-        description: "Los cambios se guardaron correctamente.",
       })
       setEditingItemUuid(null)
-      await onSaved?.()
+      setEditDraft({ name: "", description: "", price: "" })
+      await onSaved?.(editingItemUuid, updates)
     } catch (err) {
       toast({
-        title: "Error al guardar",
-        description: err instanceof Error ? err.message : "No se pudo actualizar el item.",
+        title: "No se pudo guardar",
+        description: err instanceof Error ? err.message : "Intentá nuevamente.",
         variant: "destructive",
       })
+    } finally {
+      setIsSaving(false)
+      setSavingItemUuid(null)
     }
-  }, [editingItemUuid, selectedCatalogId, editDraft, onSaved])
+  }, [editingItemUuid, selectedCatalogId, editDraft, onSaved, isSaving])
 
   return {
     editingItemUuid,
@@ -94,5 +126,7 @@ export const useItemEdit = ({ selectedCatalogId, onSaved }: UseItemEditProps) =>
     cancelEdit,
     saveEdit,
     setEditingItemUuid,
+    isSaving,
+    savingItemUuid,
   }
 }

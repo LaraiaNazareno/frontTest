@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { SketchCardsView } from "@/components/catalog-v3/sketch-cards-view"
 import { ChecklistView } from "@/components/catalog-v3/checklist-view"
@@ -25,6 +25,8 @@ import {
   CatalogLoginEmptyState,
 } from "@/components/catalog-v3/catalog-empty-states"
 import { CatalogPdfPreview } from "@/components/catalog-v3/catalog-pdf-preview"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 function CatalogPageContent() {
   const searchParams = useSearchParams()
@@ -55,6 +57,9 @@ function CatalogPageContent() {
   const [createCatalogOpen, setCreateCatalogOpen] = useState(false)
   const [editCatalogOpen, setEditCatalogOpen] = useState(false)
   const [createItemOpen, setCreateItemOpen] = useState(false)
+  const [justUpdatedItemUuid, setJustUpdatedItemUuid] = useState<string | null>(null)
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
   const {
     editingItemUuid,
     editDraft,
@@ -63,10 +68,22 @@ function CatalogPageContent() {
     cancelEdit,
     saveEdit,
     setEditingItemUuid,
+    savingItemUuid,
   } = useItemEdit({
     selectedCatalogId,
-    onSaved: async () => {
-      await reloadCatalogItems()
+    onSaved: async (itemUuid, updates) => {
+      setCatalogItems((prev: CatalogItemDetail[]) =>
+        prev.map((item: CatalogItemDetail) =>
+          getItemUuid(item) === itemUuid ? { ...item, ...updates } : item
+        )
+      )
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current)
+      }
+      setJustUpdatedItemUuid(itemUuid)
+      highlightTimeoutRef.current = setTimeout(() => {
+        setJustUpdatedItemUuid(null)
+      }, 1200)
     },
   })
   const {
@@ -97,8 +114,13 @@ function CatalogPageContent() {
   useEffect(() => {
     setEditingItemUuid(null)
   }, [selectedCatalogId, setEditingItemUuid])
-
-  const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleDeleteItem = async (itemUuid: string) => {
     if (!selectedCatalogId) {
@@ -243,6 +265,26 @@ function CatalogPageContent() {
           confirmLabel="Eliminar"
           onConfirm={handleConfirmDeleteItem}
         />
+        {hasToken && selectedCatalog && (
+          <div
+            className={`mb-8 flex ${
+              viewMode === "cards"
+                ? "max-w-6xl mx-auto"
+                : viewMode === "checklist"
+                  ? "max-w-4xl mx-auto"
+                  : "-mx-6 px-10"
+            }`}
+          >
+            <Button
+              onClick={() => setCreateItemOpen(true)}
+              size="default"
+              className="gap-2 rounded-full px-5"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Nuevo item</span>
+            </Button>
+          </div>
+        )}
         {loading && <p className="text-muted-foreground">Cargando catálogos...</p>}
         {error && <p className="text-destructive">{error}</p>}
         {itemsError && !(!loading && !error && !loadingItems && products.length === 0 && selectedCatalog) && (
@@ -270,6 +312,7 @@ function CatalogPageContent() {
             onEditSave={saveEdit}
             onEditCancel={cancelEdit}
             editingItemUuid={editingItemUuid}
+            savingItemUuid={savingItemUuid}
             editDraft={editDraft}
             onDragStart={handleDragStart}
             onDragEnter={handleDragEnter}
@@ -277,6 +320,7 @@ function CatalogPageContent() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             dragOverItemUuid={dragOverItemUuid}
+            highlightedItemUuid={justUpdatedItemUuid}
           />
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "checklist" && (
@@ -290,6 +334,7 @@ function CatalogPageContent() {
             onEditSave={saveEdit}
             onEditCancel={cancelEdit}
             editingItemUuid={editingItemUuid}
+            savingItemUuid={savingItemUuid}
             editDraft={editDraft}
             onDragStart={handleDragStart}
             onDragEnter={handleDragEnter}
@@ -297,6 +342,7 @@ function CatalogPageContent() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             dragOverItemUuid={dragOverItemUuid}
+            highlightedItemUuid={justUpdatedItemUuid}
           />
         )}
         {!loading && !error && !loadingItems && products.length > 0 && viewMode === "table" && (
@@ -317,6 +363,7 @@ function CatalogPageContent() {
             onEditSave={saveEdit}
             onEditCancel={cancelEdit}
               editingItemUuid={editingItemUuid}
+              savingItemUuid={savingItemUuid}
               editDraft={editDraft}
               onDragStart={handleDragStart}
               onDragEnter={handleDragEnter}
@@ -324,6 +371,7 @@ function CatalogPageContent() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               dragOverItemUuid={dragOverItemUuid}
+              highlightedItemUuid={justUpdatedItemUuid}
             />
           </div>
         )}

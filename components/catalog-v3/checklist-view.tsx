@@ -19,7 +19,9 @@ interface ChecklistViewProps {
   onEditSave?: () => void
   onEditCancel?: () => void
   editingItemUuid?: string | null
+  savingItemUuid?: string | null
   editDraft?: EditDraft
+  highlightedItemUuid?: string | null
   onDragStart?: (itemUuid: string) => void
   onDragEnter?: (itemUuid: string) => void
   onDragOver?: (event: React.DragEvent) => void
@@ -38,7 +40,9 @@ export function ChecklistView({
   onEditSave,
   onEditCancel,
   editingItemUuid,
+  savingItemUuid,
   editDraft,
+  highlightedItemUuid,
   onDragStart,
   onDragEnter,
   onDragOver,
@@ -69,29 +73,35 @@ export function ChecklistView({
           </div>
 
           {/* Product List */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {products.map((product, index) => {
+              const itemUuid = product.itemUuid || product.id
               const { isEditing } = getItemEditState(
                 product.itemUuid,
                 editingItemUuid,
                 editDraft,
                 onEditChange,
               )
+              const isSaving = savingItemUuid === itemUuid
+              const isHighlighted = highlightedItemUuid === itemUuid
+              const isLocked = Boolean(editingItemUuid && editingItemUuid !== itemUuid)
 
               return (
                 <div
                 key={product.id}
                 draggable={Boolean(onDragStart)}
-                onDragStart={() => onDragStart?.(product.itemUuid || product.id)}
-                onDragEnter={() => onDragEnter?.(product.itemUuid || product.id)}
+                onDragStart={() => onDragStart?.(itemUuid)}
+                onDragEnter={() => onDragEnter?.(itemUuid)}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
-                onDrop={() => onDrop?.(product.itemUuid || product.id)}
+                onDrop={() => onDrop?.(itemUuid)}
                 className={`flex flex-col items-start gap-4 p-4 rounded-2xl hover:bg-card/50 transition-colors border-2 border-transparent hover:border-primary/20 sm:flex-row sm:items-center sm:gap-6 ${
-                  dragOverItemUuid === (product.itemUuid || product.id)
+                  dragOverItemUuid === itemUuid
                     ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-2 before:h-0.5 before:bg-primary/70"
                     : ""
-                }`}
+                } ${isHighlighted ? "bg-primary/5" : ""} ${
+                  isEditing ? "bg-muted/20 border-primary/20 border-dashed" : ""
+                } ${isEditing ? "mb-2 sm:mb-3" : ""}`}
                 >
                 {/* Small thumbnail */}
                 <div className="flex-shrink-0">
@@ -111,12 +121,14 @@ export function ChecklistView({
                         field="name"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
                         className="mb-2"
                       />
                       <ItemEditField
                         field="description"
                         editDraft={editDraft}
                         onEditChange={onEditChange}
+                        disabled={isSaving}
                       />
                     </>
                   ) : (
@@ -128,25 +140,28 @@ export function ChecklistView({
                 </div>
 
                 {/* Price */}
-                <div className="flex-shrink-0 w-full sm:w-auto">
+                <div className="flex w-full flex-col gap-2 flex-shrink-0 sm:w-auto sm:self-center sm:items-end">
                   {isEditing && editDraft && onEditChange ? (
                     <ItemPriceEditField
                       editDraft={editDraft}
                       onEditChange={onEditChange}
+                      disabled={isSaving}
                       wrapperClassName="flex items-center gap-2"
                       inputClassName="w-full sm:w-28"
                     />
                   ) : (
-                    <div className="border-2 border-foreground/30 rounded-xl px-4 py-2 bg-transparent">
-                      <p className="font-bold text-foreground whitespace-nowrap">{formatPrice(product.price)}</p>
+                    <div className="text-lg font-semibold text-foreground whitespace-nowrap">
+                      {formatPrice(product.price)}
                     </div>
                   )}
                   {(onDeleteItem || onStartEditItem) && product.itemUuid && (
-                    <ItemActionButtons
-                      className="flex flex-wrap items-center gap-3 mt-3"
-                      isEditing={isEditing}
-                      onSave={() => onEditSave?.()}
-                      onCancel={() => onEditCancel?.()}
+                      <ItemActionButtons
+                        className="flex flex-wrap items-center gap-2"
+                        isEditing={isEditing}
+                        isSaving={isSaving}
+                        isLocked={isLocked}
+                        onSave={() => onEditSave?.()}
+                        onCancel={() => onEditCancel?.()}
                       onEdit={onStartEditItem ? () => onStartEditItem(product) : undefined}
                       onDelete={onDeleteItem ? () => onDeleteItem(product.itemUuid!) : undefined}
                       showDrag={Boolean(onDragStart)}
