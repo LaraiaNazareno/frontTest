@@ -66,10 +66,6 @@ export const useItemDrag = ({ items, setItems, selectedCatalogId }: UseItemDragP
     try {
       const targetIndex = toIndex + 1
       await reorderCatalogItemPosition(draggingItemUuid, selectedCatalogId, targetIndex, token)
-      toast({
-        title: "Orden actualizado",
-        description: "Se guardó el nuevo orden.",
-      })
     } catch (err) {
       toast({
         title: "No se pudo ordenar",

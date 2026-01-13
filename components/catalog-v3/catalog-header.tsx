@@ -41,6 +41,7 @@ type CatalogHeaderProps = {
   onDeleteCatalog: () => void
   onSelectCatalog: (id: string) => void
   onExportPdf: () => void
+  canExportPdf: boolean
 }
 
 export function CatalogHeader({
@@ -59,6 +60,7 @@ export function CatalogHeader({
   onDeleteCatalog,
   onSelectCatalog,
   onExportPdf,
+  canExportPdf,
 }: CatalogHeaderProps) {
   return (
     <div className="border-b border-border bg-card">
@@ -207,7 +209,12 @@ export function CatalogHeader({
             </div>
 
             <div className="flex items-center gap-2">
-              <Button onClick={onExportPdf} size="default" className="gap-2 rounded-full px-5">
+              <Button
+                onClick={onExportPdf}
+                size="default"
+                className="gap-2 rounded-full px-5"
+                disabled={!canExportPdf}
+              >
                 <Download className="h-4 w-4" />
                 <span>Exportar PDF</span>
               </Button>

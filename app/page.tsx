@@ -109,6 +109,7 @@ function CatalogPageContent() {
     viewMode,
     pageBackgroundColor,
     componentColor,
+    itemsCount: products.length,
   })
 
   useEffect(() => {
@@ -121,6 +122,20 @@ function CatalogPageContent() {
       }
     }
   }, [])
+  useEffect(() => {
+    if (hasToken === false) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      reloadCatalogs()
+      reloadCatalogItems()
+    }, 10 * 60 * 1000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [reloadCatalogs, reloadCatalogItems, hasToken])
 
   const handleDeleteItem = async (itemUuid: string) => {
     if (!selectedCatalogId) {
@@ -219,6 +234,7 @@ function CatalogPageContent() {
         onDeleteCatalog={handleDeleteCatalog}
         onSelectCatalog={setSelectedCatalogId}
         onExportPdf={exportPdf}
+        canExportPdf={products.length > 0}
       />
 
       {/* Main Content */}
@@ -265,7 +281,7 @@ function CatalogPageContent() {
           confirmLabel="Eliminar"
           onConfirm={handleConfirmDeleteItem}
         />
-        {hasToken && selectedCatalog && (
+        {hasToken && selectedCatalog && hasCatalogs && products.length > 0 && (
           <div
             className={`mb-8 flex ${
               viewMode === "cards"

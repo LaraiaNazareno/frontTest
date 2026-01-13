@@ -46,8 +46,8 @@ export const useCatalogs = (preferredCatalogId: string | null): UseCatalogsResul
       }
 
       setHasToken(true)
-      try {
-        const items = await fetchCatalogs(token)
+    try {
+      const items = await fetchCatalogs(token)
         const storedSelectedId = localStorage.getItem("selectedCatalogId")
         const resolvedSelectedId =
           nextSelectedId ??
@@ -63,18 +63,28 @@ export const useCatalogs = (preferredCatalogId: string | null): UseCatalogsResul
         if (resolvedSelectedId) {
           localStorage.setItem("selectedCatalogId", resolvedSelectedId)
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error inesperado al cargar el catálogo.")
-      } finally {
-        setLoading(false)
+    } catch (err) {
+      const status = typeof err === "object" && err && "status" in err ? (err as { status?: number }).status : undefined
+      if (status === 401 || status === 403) {
+        localStorage.removeItem("token")
+        localStorage.removeItem("selectedCatalogId")
+        setHasToken(false)
+        setCatalogs([])
+        setSelectedCatalogId(null)
+        setError("Sesión expirada. Volvé a iniciar sesión.")
+        return
       }
-    },
+      setError(err instanceof Error ? err.message : "Error inesperado al cargar el catálogo.")
+    } finally {
+      setLoading(false)
+    }
+  },
     [preferredCatalogId, selectedCatalogId],
   )
 
   useEffect(() => {
-    reload()
-  }, [reload])
+    void reload()
+  }, [preferredCatalogId, selectedCatalogId, reload])
 
   useEffect(() => {
     if (selectedCatalogId) {

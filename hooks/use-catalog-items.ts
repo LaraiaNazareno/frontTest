@@ -41,6 +41,12 @@ export const useCatalogItems = (selectedCatalogId: string | null): UseCatalogIte
       const data = await fetchCatalogItems(selectedCatalogId, token)
       setItems(data)
     } catch (err) {
+      const status = typeof err === "object" && err && "status" in err ? (err as { status?: number }).status : undefined
+      if (status === 401 || status === 403) {
+        setItems([])
+        setError("Sesión expirada. Volvé a iniciar sesión.")
+        return
+      }
       const rawMessage = err instanceof Error ? err.message : ""
       const message = rawMessage.includes("<!DOCTYPE") ? "No se pudieron cargar los items." : rawMessage
       setError(message || "Error inesperado al cargar los items.")

@@ -89,7 +89,10 @@ export default function RegistroPage() {
               <label className="text-sm font-medium text-foreground">Email</label>
               <Input
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setAuthError(null)
+                }}
                 placeholder="Ingresá tu email"
                 type="email"
               />
@@ -99,7 +102,10 @@ export default function RegistroPage() {
               <div className="relative">
                 <Input
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setAuthError(null)
+                  }}
                   placeholder="Ingresá tu contraseña"
                   type={showPassword ? "text" : "password"}
                   className="pr-10"

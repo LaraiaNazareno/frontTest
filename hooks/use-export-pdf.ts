@@ -14,6 +14,7 @@ type UseExportPdfProps = {
   viewMode: ViewMode
   pageBackgroundColor?: string
   componentColor: string
+  itemsCount: number
 }
 
 export const useExportPdf = ({
@@ -21,10 +22,19 @@ export const useExportPdf = ({
   viewMode,
   pageBackgroundColor,
   componentColor,
+  itemsCount,
 }: UseExportPdfProps) => {
   const pdfContentRef = useRef<HTMLDivElement | null>(null)
 
   const exportPdf = useCallback(async () => {
+    if (itemsCount === 0) {
+      toast({
+        title: "Sin items para exportar",
+        description: "Agrega al menos un item antes de exportar el PDF.",
+        variant: "destructive",
+      })
+      return
+    }
     const token = requireToken(toast, {
       title: "No hay sesión",
       description: "Inicia sesión para exportar el PDF.",
@@ -115,7 +125,7 @@ export const useExportPdf = ({
         variant: "destructive",
       })
     }
-  }, [selectedCatalogId, viewMode, pageBackgroundColor, componentColor])
+  }, [selectedCatalogId, viewMode, pageBackgroundColor, componentColor, itemsCount])
 
   return {
     pdfContentRef,

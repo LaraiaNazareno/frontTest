@@ -175,7 +175,7 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
               <label className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
                 Precio
               </label>
-              <div className="inline-flex items-center rounded-md border border-input bg-background px-3">
+              <div className="ml-4 inline-flex items-center rounded-md border border-input bg-white px-3">
                 <Input
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}

@@ -34,7 +34,9 @@ export const fetchCatalogs = async (token: string) => {
   })
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
+    const error = new Error(await readErrorMessage(response))
+    ;(error as Error & { status?: number }).status = response.status
+    throw error
   }
 
   const data = (await response.json()) as { items: CatalogItem[] }
@@ -50,7 +52,9 @@ export const fetchCatalogItems = async (catalogId: string, token: string) => {
   })
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
+    const error = new Error(await readErrorMessage(response))
+    ;(error as Error & { status?: number }).status = response.status
+    throw error
   }
 
   const data = await response.json()
