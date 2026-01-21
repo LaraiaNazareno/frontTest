@@ -74,8 +74,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_55%),radial-gradient(circle_at_right,_rgba(147,197,253,0.2),_transparent_45%)]" />
-      <div className="relative border-b border-border bg-card/80 backdrop-blur">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.12),_transparent_55%),radial-gradient(circle_at_right,_rgba(147,197,253,0.16),_transparent_45%)]" />
+      <div className="relative border-b border-border/60 bg-card/80 backdrop-blur">
         <div className="container mx-auto px-6 py-4 flex items-center justify-end">
           <Button asChild variant="outline" size="icon" aria-label="Volver al menú principal">
             <Link href="/">
@@ -86,24 +86,25 @@ export default function LoginPage() {
       </div>
 
       <main className="relative container mx-auto px-6 py-16">
-        <div className="max-w-md rounded-2xl border border-border/60 bg-card/90 p-8 mx-auto shadow-xl backdrop-blur">
+        <div className="max-w-md rounded-3xl border border-border/60 bg-card/90 p-8 mx-auto shadow-2xl backdrop-blur">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary">Ingresar</h1>
+            <h1 className="text-3xl font-semibold text-foreground">Ingresar</h1>
             <p className="text-muted-foreground mt-2">Accede para ver tus catálogos y exportar PDFs.</p>
           </div>
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
-              <Input
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  setAuthError(null)
-                }}
-                placeholder="Ingresá tu email"
-                type="email"
-              />
-            </div>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Email</label>
+                <Input
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setAuthError(null)
+                  }}
+                  placeholder="Ingresá tu email"
+                  type="email"
+                  className="h-11"
+                />
+              </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-foreground">Contraseña</label>
@@ -118,7 +119,7 @@ export default function LoginPage() {
                   }}
                   placeholder="Ingresá tu contraseña"
                   type={showPassword ? "text" : "password"}
-                  className="pr-10"
+                  className="h-11 pr-10"
                 />
                 <button
                   type="button"
@@ -130,14 +131,14 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild variant="outline" size="lg" className="flex-1">
-                <Link href="/registro">Crear cuenta</Link>
-              </Button>
-              <Button onClick={handleLogin} size="lg" className="flex-1" disabled={authLoading}>
-                {authLoading ? "Ingresando..." : "Ingresar"}
-              </Button>
-            </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button asChild variant="outline" size="lg" className="flex-1 shadow-sm">
+                  <Link href="/registro">Crear cuenta</Link>
+                </Button>
+                <Button onClick={handleLogin} size="lg" className="flex-1 shadow-sm" disabled={authLoading}>
+                  {authLoading ? "Ingresando..." : "Ingresar"}
+                </Button>
+              </div>
             {authError && <p className="text-destructive text-sm">{authError}</p>}
           </div>
         </div>

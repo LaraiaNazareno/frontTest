@@ -54,9 +54,9 @@ export function TableView({
 
   return (
     <div className="space-y-8">
-      <div className="bg-card border-2 border-border rounded-lg overflow-hidden" style={backgroundStyle}>
-        <div className="bg-primary/5 border-b-2 border-border px-6 py-4" style={backgroundStyle}>
-          <h2 className="text-2xl font-bold text-primary">{businessName}</h2>
+      <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm" style={backgroundStyle}>
+        <div className="bg-muted/30 border-b border-border/60 px-6 py-4" style={backgroundStyle}>
+          <h2 className="text-2xl font-semibold text-foreground">{businessName}</h2>
         </div>
 
         <div className="sm:hidden space-y-4 px-4 py-6">
@@ -81,21 +81,21 @@ export function TableView({
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
               onDrop={() => onDrop?.(itemUuid)}
-              className={`rounded-2xl border border-border p-4 bg-card/70 ${
+              className={`rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm ${
                 dragOverItemUuid === itemUuid
                   ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-1 before:h-0.5 before:bg-primary/70"
                   : ""
               } ${isHighlighted ? "bg-primary/5" : ""} ${
-                isEditing ? "bg-muted/20 border-primary/20 border-dashed mb-2" : ""
+                isEditing ? "bg-muted/30 border-border mb-2" : ""
               }`}
               style={backgroundStyle}
               >
               <div className="flex items-start gap-4">
-                <ProductImage
-                  src={product.image}
-                  alt={product.title}
-                  className="w-16 h-16 rounded-lg border-2 border-border flex-shrink-0"
-                />
+                  <ProductImage
+                    src={product.image}
+                    alt={product.title}
+                    className="w-16 h-16 rounded-lg border border-border/60 bg-background flex-shrink-0 shadow-sm"
+                  />
                 <div className="flex-1 min-w-0">
                   {isEditing && editDraft && onEditChange ? (
                     <>
@@ -159,7 +159,7 @@ export function TableView({
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-border bg-muted/30" style={backgroundStyle}>
+              <tr className="border-b border-border/60 bg-muted/30" style={backgroundStyle}>
                 <th className="text-left py-4 px-6 font-semibold text-foreground">Imagen</th>
                 <th className="text-left py-4 px-6 font-semibold text-foreground">Nombre</th>
                 <th className="text-left py-4 px-6 font-semibold text-foreground">Descripción</th>
@@ -191,19 +191,19 @@ export function TableView({
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
                   onDrop={() => onDrop?.(itemUuid)}
-                  className={`border-b border-border hover:bg-muted/20 transition-colors ${
+                  className={`border-b border-border/60 hover:bg-muted/20 transition-colors ${
                     dragOverItemUuid === itemUuid
                       ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-1 before:h-0.5 before:bg-primary/70"
                       : ""
                   } ${isHighlighted ? "bg-primary/5" : ""} ${
-                    isEditing ? "bg-muted/20 border-b-2 border-dashed border-primary/20" : ""
+                    isEditing ? "bg-muted/30 border-b border-border" : ""
                   }`}
                   >
                   <td className="py-4 px-6">
                     <ProductImage
                       src={product.image}
                       alt={product.title}
-                      className="w-20 h-20 rounded-lg border-2 border-border flex-shrink-0"
+                      className="w-20 h-20 rounded-lg border border-border/60 bg-background flex-shrink-0 shadow-sm"
                     />
                   </td>
                   <td className="py-4 px-6">

@@ -17,7 +17,9 @@ import { useItemEdit } from "@/hooks/use-item-edit"
 import { useExportPdf } from "@/hooks/use-export-pdf"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { CreateItemModal } from "@/components/modals/create-item-modal"
+import { BulkCreateItemsModal } from "@/components/modals/bulk-create-items-modal"
 import { CatalogModal } from "@/components/modals/catalog-modal"
+
 import { CatalogHeader } from "@/components/catalog-v3/catalog-header"
 import {
   CatalogEmptyState,
@@ -57,7 +59,9 @@ function CatalogPageContent() {
   const [createCatalogOpen, setCreateCatalogOpen] = useState(false)
   const [editCatalogOpen, setEditCatalogOpen] = useState(false)
   const [createItemOpen, setCreateItemOpen] = useState(false)
+  const [bulkCreateItemsOpen, setBulkCreateItemsOpen] = useState(false)
   const [justUpdatedItemUuid, setJustUpdatedItemUuid] = useState<string | null>(null)
+
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const getItemUuid = (item: CatalogItemDetail) => item.uuid || item.id
   const {
@@ -218,24 +222,26 @@ function CatalogPageContent() {
       className="min-h-screen bg-background"
       style={{ backgroundColor: pageBackgroundColor }}
     >
-      <CatalogHeader
-        hasToken={hasToken}
-        selectedCatalog={selectedCatalog}
-        catalogs={catalogs}
-        selectedCatalogId={selectedCatalogId}
-        hasCatalogs={hasCatalogs}
-        deletingCatalog={deletingCatalog}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onOpenCreateCatalog={() => setCreateCatalogOpen(true)}
-        onOpenCreateItem={() => setCreateItemOpen(true)}
-        onOpenEditCatalog={() => setEditCatalogOpen(true)}
-        onLogout={logout}
-        onDeleteCatalog={handleDeleteCatalog}
-        onSelectCatalog={setSelectedCatalogId}
-        onExportPdf={exportPdf}
-        canExportPdf={products.length > 0}
-      />
+        <CatalogHeader
+          hasToken={hasToken}
+          selectedCatalog={selectedCatalog}
+          catalogs={catalogs}
+          selectedCatalogId={selectedCatalogId}
+          hasCatalogs={hasCatalogs}
+          deletingCatalog={deletingCatalog}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onOpenCreateCatalog={() => setCreateCatalogOpen(true)}
+          onOpenCreateItem={() => setCreateItemOpen(true)}
+          onOpenBulkCreateItems={() => setBulkCreateItemsOpen(true)}
+          onOpenEditCatalog={() => setEditCatalogOpen(true)}
+          onLogout={logout}
+          onDeleteCatalog={handleDeleteCatalog}
+          onSelectCatalog={setSelectedCatalogId}
+          onExportPdf={exportPdf}
+          canExportPdf={products.length > 0}
+        />
+
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-12">
@@ -264,8 +270,20 @@ function CatalogPageContent() {
           onCreated={async () => {
             await reloadCatalogItems()
           }}
+          onOpenBulk={async () => {
+            setBulkCreateItemsOpen(true)
+          }}
+        />
+        <BulkCreateItemsModal
+          open={bulkCreateItemsOpen}
+          onOpenChange={setBulkCreateItemsOpen}
+          catalogId={selectedCatalogId}
+          onCreated={async () => {
+            await reloadCatalogItems()
+          }}
         />
         <ConfirmDialog
+
           open={Boolean(pendingDeleteItemUuid)}
           onOpenChange={(open) => {
             if (!open) {
@@ -283,7 +301,7 @@ function CatalogPageContent() {
         />
         {hasToken && selectedCatalog && hasCatalogs && products.length > 0 && (
           <div
-            className={`mb-8 flex ${
+            className={`mb-10 flex ${
               viewMode === "cards"
                 ? "max-w-6xl mx-auto"
                 : viewMode === "checklist"
@@ -294,13 +312,23 @@ function CatalogPageContent() {
             <Button
               onClick={() => setCreateItemOpen(true)}
               size="default"
-              className="gap-2 rounded-full px-5"
+              className="gap-2 rounded-full px-5 shadow-sm"
             >
               <Plus className="h-4 w-4" />
               <span>Nuevo item</span>
             </Button>
+            <Button
+              onClick={() => setBulkCreateItemsOpen(true)}
+              variant="outline"
+              size="default"
+              className="gap-2 rounded-full px-5 shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Carga masiva</span>
+            </Button>
           </div>
         )}
+
         {loading && <p className="text-muted-foreground">Cargando catálogos...</p>}
         {error && <p className="text-destructive">{error}</p>}
         {itemsError && !(!loading && !error && !loadingItems && products.length === 0 && selectedCatalog) && (

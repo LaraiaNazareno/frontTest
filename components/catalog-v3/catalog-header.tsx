@@ -36,6 +36,7 @@ type CatalogHeaderProps = {
   onViewModeChange: (mode: ViewMode) => void
   onOpenCreateCatalog: () => void
   onOpenCreateItem: () => void
+  onOpenBulkCreateItems: () => void
   onOpenEditCatalog: () => void
   onLogout: () => void
   onDeleteCatalog: () => void
@@ -55,6 +56,7 @@ export function CatalogHeader({
   onViewModeChange,
   onOpenCreateCatalog,
   onOpenCreateItem,
+  onOpenBulkCreateItems,
   onOpenEditCatalog,
   onLogout,
   onDeleteCatalog,
@@ -62,11 +64,12 @@ export function CatalogHeader({
   onExportPdf,
   canExportPdf,
 }: CatalogHeaderProps) {
+
   return (
-    <div className="border-b border-border bg-card">
-      <div className="container mx-auto px-10 py-5">
+    <div className="border-b border-border/60 bg-card/80 backdrop-blur">
+      <div className="container mx-auto px-6 py-5">
         <div className="flex min-h-[60px] flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4">
             {hasToken && (
               <DropdownMenu>
                 <Tooltip>
@@ -75,7 +78,7 @@ export function CatalogHeader({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="rounded-full"
+                      className="rounded-full border border-border/60 bg-background/70 shadow-sm hover:bg-background"
                       aria-label="Más acciones"
                     >
                       <Menu className="h-4 w-4" />
@@ -107,6 +110,7 @@ export function CatalogHeader({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
+
                   <ConfirmDialog
                     title="Eliminar catálogo"
                     description={
@@ -135,13 +139,13 @@ export function CatalogHeader({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <span className="text-sm text-muted-foreground">Catálogo:</span>
+            <span className="text-sm font-medium text-muted-foreground">Catálogo</span>
             <Select
               value={selectedCatalogId ?? undefined}
               disabled={!hasCatalogs}
               onValueChange={(value: string) => onSelectCatalog(value)}
             >
-              <SelectTrigger className="h-9 w-64 rounded-full bg-background">
+              <SelectTrigger className="h-10 w-72 rounded-full bg-background/80 shadow-sm">
                 <SelectValue
                   placeholder={hasCatalogs ? "Selecciona un catálogo" : "Sin catálogos"}
                 />
@@ -163,16 +167,16 @@ export function CatalogHeader({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-            <div className="flex items-center gap-1 rounded-full bg-transparent p-1">
+            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-background/70 p-1 shadow-sm">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onViewModeChange("cards")}
                 className={cn(
-                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  "h-8 rounded-full px-3 text-xs font-medium text-muted-foreground/70 hover:text-foreground",
                   viewMode === "cards"
-                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
-                    : "hover:bg-muted/10"
+                    ? "bg-muted/60 text-foreground shadow-sm"
+                    : "hover:bg-muted/20"
                 )}
               >
                 <LayoutGrid className="h-4 w-4" />
@@ -183,10 +187,10 @@ export function CatalogHeader({
                 size="sm"
                 onClick={() => onViewModeChange("checklist")}
                 className={cn(
-                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  "h-8 rounded-full px-3 text-xs font-medium text-muted-foreground/70 hover:text-foreground",
                   viewMode === "checklist"
-                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
-                    : "hover:bg-muted/10"
+                    ? "bg-muted/60 text-foreground shadow-sm"
+                    : "hover:bg-muted/20"
                 )}
               >
                 <List className="h-4 w-4" />
@@ -197,10 +201,10 @@ export function CatalogHeader({
                 size="sm"
                 onClick={() => onViewModeChange("table")}
                 className={cn(
-                  "h-8 rounded-full px-3 text-muted-foreground/60 hover:text-foreground",
+                  "h-8 rounded-full px-3 text-xs font-medium text-muted-foreground/70 hover:text-foreground",
                   viewMode === "table"
-                    ? "bg-muted/20 text-foreground hover:bg-muted/30"
-                    : "hover:bg-muted/10"
+                    ? "bg-muted/60 text-foreground shadow-sm"
+                    : "hover:bg-muted/20"
                 )}
               >
                 <Table className="h-4 w-4" />
@@ -212,7 +216,7 @@ export function CatalogHeader({
               <Button
                 onClick={onExportPdf}
                 size="default"
-                className="gap-2 rounded-full px-5"
+                className="gap-2 rounded-full px-5 shadow-sm"
                 disabled={!canExportPdf}
               >
                 <Download className="h-4 w-4" />

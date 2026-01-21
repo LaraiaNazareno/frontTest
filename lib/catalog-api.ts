@@ -334,3 +334,33 @@ export const createCatalogItem = async (
 
   return response.json()
 }
+
+export const createCatalogItemsBulk = async (
+  token: string,
+  catalogId: string,
+  payload: {
+    items: Array<{ name: string; description?: string | null; price: string }>
+    images: File[]
+  },
+) => {
+  const baseUrl = getApiBaseUrl()
+  const formData = new FormData()
+  formData.append("catalogoId", catalogId)
+  formData.append("items", JSON.stringify(payload.items))
+  payload.images.forEach((file) => formData.append("images", file))
+
+  const response = await fetch(`${baseUrl}/api/items/bulk`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  return response.json()
+}
+

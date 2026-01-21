@@ -81,11 +81,11 @@ export function SketchCardsView({
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={() => onDrop?.(itemUuid)}
-            className={`print-card bg-accent/30 border-2 border-foreground/20 rounded-3xl p-6 hover:shadow-xl transition-shadow ${
+            className={`print-card bg-card/90 border border-border/60 rounded-3xl p-7 shadow-sm hover:shadow-lg transition-shadow ${
               dragOverItemUuid === itemUuid
-                ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-3 before:h-0.5 before:bg-primary/70"
+                ? "relative before:content-[''] before:absolute before:left-0 before:right-0 before:-top-2 before:h-0.5 before:bg-primary/70"
                 : ""
-            } ${isHighlighted ? "ring-2 ring-primary/30" : ""} ${
+            } ${isHighlighted ? "ring-2 ring-primary/20" : ""} ${
               isEditing ? "ring-1 ring-primary/30 bg-primary/5" : ""
             } ${isEditing ? "mb-2 sm:mb-3" : ""}`}
             style={cardBackgroundColor ? { backgroundColor: cardBackgroundColor } : undefined}
@@ -104,7 +104,7 @@ export function SketchCardsView({
                     className="text-2xl font-bold"
                   />
                 ) : (
-                  <h3 className="font-bold text-2xl text-foreground leading-tight">{product.title}</h3>
+                  <h3 className="text-2xl font-semibold text-foreground leading-tight">{product.title}</h3>
                 )}
 
                 {isEditing && editDraft && onEditChange ? (
@@ -157,7 +157,7 @@ export function SketchCardsView({
                 <ProductImage
                   src={product.image}
                   alt={product.title}
-                  className="rounded-2xl border-2 border-foreground/20 aspect-square w-full"
+                  className="rounded-2xl border border-border/60 bg-background/70 aspect-square w-full shadow-sm"
                   imageClassName="rounded-xl"
                 />
               </div>

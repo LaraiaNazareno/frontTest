@@ -23,9 +23,11 @@ type CreateItemModalProps = {
   onOpenChange: (open: boolean) => void
   catalogId: string | null
   onCreated?: () => void | Promise<void>
+  onOpenBulk?: () => void | Promise<void>
 }
 
-export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: CreateItemModalProps) {
+export function CreateItemModal({ open, onOpenChange, catalogId, onCreated, onOpenBulk }: CreateItemModalProps) {
+
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
@@ -245,9 +247,26 @@ export function CreateItemModal({ open, onOpenChange, catalogId, onCreated }: Cr
           >
             {creating ? "Creando..." : "Crear item"}
           </Button>
+          {onOpenBulk && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                if (creating) {
+                  return
+                }
+                onOpenChange(false)
+                void onOpenBulk()
+              }}
+              disabled={creating}
+            >
+              Carga masiva
+            </Button>
+          )}
           <Button variant="outline" size="lg" onClick={() => onOpenChange(false)} disabled={creating}>
             Cancelar
           </Button>
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
